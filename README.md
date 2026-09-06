@@ -87,3 +87,17 @@ The app serves `index.html` and `style.css` from the project root. Render provid
 - `style.css` - interface styles
 - `requirements.txt` - Python dependencies
 - `.github/skills/render-deploy/SKILL.md` - repeatable GitHub-to-Render deployment workflow
+
+## License
+
+All rights reserved.
+
+You are welcome to use the hosted application at
+[syloti-nagri-bangla-birdirectional.onrender.com](https://syloti-nagri-bangla-birdirectional.onrender.com/).
+
+The source code in this repository is provided for viewing purposes only. No
+permission is granted to copy, modify, distribute, sublicense, or use this
+code or any part of it, in source or compiled form, for any purpose, without
+prior written consent from the authors.
+
+Copyright (c) 2026 Misbah Al Mamun
