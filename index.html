@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<!-- index.html - lives in the same folder as app.py, served by Flask at "/" -->
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Convert text between Bengali and Syloti Nagri script, in both directions.">
+  <meta name="color-scheme" content="light dark">
+  <title>Syltrans - Bangla and Syloti Nagri transliterator</title>
+
+  <!--
+    Apply the saved theme before the stylesheet paints, so a dark-mode reload
+    never flashes a white page. This is the only inline script outside the
+    main block at the bottom.
+  -->
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem('syltrans.theme');
+        var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.dataset.theme = saved || (prefersDark ? 'dark' : 'light');
+      } catch (e) {
+        document.documentElement.dataset.theme = 'light';
+      }
+    })();
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&family=Noto+Sans+Syloti+Nagri&family=Noto+Serif+Bengali:wght@400;500;600&display=swap">
+
+  <!-- Icons (the only external library on the page) -->
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+        crossorigin="anonymous" referrerpolicy="no-referrer">
+
+  <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+  <div class="shell">
+
+    <!-- ================= Masthead ================= -->
+    <header class="masthead">
+      <div class="brand">
+        <!-- The mark is the Syloti Nagri letter "na", the first letter of Nagri -->
+        <span class="brand__mark" aria-hidden="true">ꠘ</span>
+        <div class="brand__text">
+          <div class="brand__name">Syltrans</div>
+          <div class="brand__tagline">Bangla &#8644; Syloti Nagri</div>
+        </div>
+      </div>
+
+      <div class="masthead__tools">
+        <label class="switch" for="autoConvert">
+          <input type="checkbox" id="autoConvert" checked
+                 aria-describedby="autoConvertHint">
+          <span class="switch__track" aria-hidden="true"></span>
+          <span class="switch__label">Convert as I type</span>
+        </label>
+        <span id="autoConvertHint" class="visually-hidden">
+          When on, text is converted automatically half a second after you stop typing.
+        </span>
+
+        <button type="button" class="icon-btn" id="themeBtn"
+                aria-label="Switch to dark theme" title="Switch theme">
+          <i class="fa-solid fa-moon" id="themeIcon" aria-hidden="true"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- ================= Direction ledger ================= -->
+    <section class="ledger" aria-labelledby="ledgerLabel">
+      <h1 id="ledgerLabel" class="visually-hidden">Choose a conversion direction</h1>
+
+      <div class="ledger__pair" role="group" aria-label="Conversion direction">
+        <button type="button" class="dir-btn" id="dirBnToSyl"
+                data-direction="bn_to_syl" aria-pressed="true">
+          <span class="dir-btn__glyphs" aria-hidden="true">
+            <span class="dir-btn__from glyph-bn">অ</span>
+            <i class="fa-solid fa-arrow-right dir-btn__arrow"></i>
+            <span class="dir-btn__to glyph-syl">ꠅ</span>
+          </span>
+          <span class="dir-btn__caption">Bangla to Syloti</span>
+        </button>
+
+        <button type="button" class="dir-btn" id="dirSylToBn"
+                data-direction="syl_to_bn" aria-pressed="false">
+          <span class="dir-btn__glyphs" aria-hidden="true">
+            <span class="dir-btn__from glyph-syl">ꠅ</span>
+            <i class="fa-solid fa-arrow-right dir-btn__arrow"></i>
+            <span class="dir-btn__to glyph-bn">অ</span>
+          </span>
+          <span class="dir-btn__caption">Syloti to Bangla</span>
+        </button>
+      </div>
+
+      <p class="ledger__hint">
+        <kbd>Ctrl</kbd> <kbd>Enter</kbd> converts
+        <span class="dot">&bull;</span>
+        <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>S</kbd> swaps
+      </p>
+    </section>
+
+    <!-- ================= Workspace ================= -->
+    <main class="workspace" id="workspace" data-direction="bn_to_syl">
+
+      <!-- ----- Input panel ----- -->
+      <section class="panel panel--in" aria-labelledby="inTitle">
+        <div class="panel__head">
+          <span class="panel__badge" id="inBadge" aria-hidden="true">অ</span>
+          <div class="panel__titles">
+            <h2 class="panel__title" id="inTitle">Bengali</h2>
+            <div class="panel__role">Source</div>
+          </div>
+
+          <div class="panel__actions">
+            <label class="visually-hidden" for="exampleSelect">Load an example</label>
+            <select class="mini-select" id="exampleSelect">
+              <option value="">Try an example</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="panel__body">
+          <label class="visually-hidden" for="inputText">Text to convert</label>
+          <textarea id="inputText" class="script-field is-bn" lang="bn"
+                    spellcheck="false" autocomplete="off"
+                    placeholder="Type or paste text here."></textarea>
+        </div>
+
+        <div class="panel__foot">
+          <span class="count"><strong id="inChars">0</strong> characters</span>
+          <span class="count"><strong id="inWords">0</strong> words</span>
+        </div>
+      </section>
+
+      <!-- ----- Swap rail ----- -->
+      <div class="rail">
+        <button type="button" class="swap-btn" id="swapBtn"
+                aria-label="Swap direction and move the output into the input"
+                title="Swap (Ctrl+Shift+S)">
+          <i class="fa-solid fa-right-left" aria-hidden="true"></i>
+        </button>
+      </div>
+
+      <!-- ----- Output panel ----- -->
+      <section class="panel panel--out" aria-labelledby="outTitle">
+        <div class="panel__head">
+          <span class="panel__badge" id="outBadge" aria-hidden="true">ꠅ</span>
+          <div class="panel__titles">
+            <h2 class="panel__title" id="outTitle">Syloti Nagri</h2>
+            <div class="panel__role">Result</div>
+          </div>
+
+          <div class="panel__actions">
+            <button type="button" class="mini-btn" id="copyBtn" disabled>
+              <i class="fa-regular fa-copy" id="copyIcon" aria-hidden="true"></i>
+              <span id="copyLabel">Copy</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="panel__body">
+          <label class="visually-hidden" for="outputText">Converted text</label>
+          <textarea id="outputText" class="script-field is-syl" lang="syl-Sylo"
+                    readonly spellcheck="false"
+                    aria-live="polite" aria-busy="false"></textarea>
+
+          <div class="panel__empty" id="outEmpty">
+            <i class="fa-solid fa-feather-pointed" aria-hidden="true"></i>
+            <span>The converted text appears here.</span>
+          </div>
+
+          <div class="panel__progress" id="progress" aria-hidden="true"></div>
+        </div>
+
+        <div class="panel__foot">
+          <span class="count"><strong id="outChars">0</strong> characters</span>
+          <span class="count"><strong id="outWords">0</strong> words</span>
+        </div>
+      </section>
+    </main>
+
+    <!-- ================= Commands ================= -->
+    <div class="commands">
+      <button type="button" class="btn btn--primary" id="convertBtn">
+        <span class="spinner" id="spinner" hidden></span>
+        <i class="fa-solid fa-wand-magic-sparkles" id="convertIcon" aria-hidden="true"></i>
+        <span id="convertLabel">Convert</span>
+        <span class="btn__shortcut" id="convertShortcut">Ctrl+&#9166;</span>
+      </button>
+
+      <button type="button" class="btn btn--ghost" id="clearBtn">
+        <i class="fa-regular fa-trash-can" aria-hidden="true"></i>
+        Clear
+      </button>
+
+      <p class="commands__status" id="statusLine" role="status"></p>
+    </div>
+
+    <!-- ================= History ================= -->
+    <section class="history" id="history" data-open="false">
+      <button type="button" class="history__head" id="historyToggle"
+              aria-expanded="false" aria-controls="historyPanel">
+        <i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i>
+        <span class="history__title">History</span>
+        <span class="history__count" id="historyCount">0 of 10</span>
+        <i class="fa-solid fa-chevron-down history__chevron" aria-hidden="true"></i>
+      </button>
+
+      <div class="history__panel" id="historyPanel" hidden>
+        <ul class="history__list" id="historyList" aria-label="Recent conversions"></ul>
+        <p class="history__empty" id="historyEmpty">
+          Nothing yet. Your last ten conversions will be saved here on this device.
+        </p>
+        <div class="history__foot">
+          <button type="button" class="mini-btn" id="clearHistoryBtn">
+            <i class="fa-regular fa-trash-can" aria-hidden="true"></i>
+            Clear history
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= Colophon ================= -->
+    <footer class="colophon">
+      <span><span class="status-dot" id="statusDot"></span><span id="statusText">Checking service</span></span>
+      <span class="dot">&bull;</span>
+      <span>Rule-based transliteration &mdash; review the output before publishing</span>
+    </footer>
+  </div>
+
+  <!-- Toast stack -->
+  <div class="toasts" id="toasts" role="region" aria-label="Notifications" aria-live="polite"></div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    /* ===================================================================
+       Constants
+       =================================================================== */
+
+    var STORE = {
+      theme: 'syltrans.theme',
+      auto: 'syltrans.auto',
+      direction: 'syltrans.direction',
+      history: 'syltrans.history'
+    };
+
+    var DEBOUNCE_MS = 500;      // auto-convert delay after the last keystroke
+    var SPINNER_DELAY_MS = 160; // only show the spinner if the call is slow
+    var HISTORY_LIMIT = 10;
+    var MAX_CHARS = 20000;      // must match MAX_INPUT_CHARS in app.py
+
+    // Per-script metadata. Drives labels, fonts, badges and placeholders.
+    var SCRIPTS = {
+      bn: {
+        name: 'Bengali',
+        glyph: 'অ',
+        cls: 'is-bn',
+        lang: 'bn',
+        placeholder: 'Type or paste Bengali text here.'
+      },
+      syl: {
+        name: 'Syloti Nagri',
+        glyph: 'ꠅ',
+        cls: 'is-syl',
+        lang: 'syl-Sylo',
+        placeholder: 'Type or paste Syloti Nagri text here.'
+      }
+    };
+
+    var DIRECTIONS = {
+      bn_to_syl: { from: 'bn', to: 'syl' },
+      syl_to_bn: { from: 'syl', to: 'bn' }
+    };
+
+    // Sample texts. The Syloti samples are genuine output of this engine,
+    // so round-tripping them is a fair test of the reverse direction.
+    var EXAMPLES = [
+      {
+        label: 'Bangla - national anthem',
+        direction: 'bn_to_syl',
+        text: 'আমার সোনার বাংলা, আমি তোমায় ভালোবাসি।'
+      },
+      {
+        label: 'Bangla - about the script',
+        direction: 'bn_to_syl',
+        text: 'সিলেটি নাগরী একটি প্রাচীন লিপি।'
+      },
+      {
+        label: 'Syloti - about Sylhet',
+        direction: 'syl_to_bn',
+        text: 'ꠡꠤꠟꠦꠐ ꠛꠣꠋꠟꠣꠖꠦꠡꠦꠞ ꠄꠇꠐꠤ ꠡꠥꠘ꠆ꠖꠞ ꠡꠢꠞ।'
+      },
+      {
+        label: 'Syloti - greeting',
+        direction: 'syl_to_bn',
+        text: 'ꠔꠥꠝꠤ ꠇꠦꠝꠘ ꠀꠍꠧ? ꠀꠝꠤ ꠜꠣꠟꠧ ꠀꠍꠤ।'
+      }
+    ];
+
+    /* ===================================================================
+       Element references
+       =================================================================== */
+
+    var $ = function (id) { return document.getElementById(id); };
+
+    var el = {
+      workspace: $('workspace'),
+      input: $('inputText'),
+      output: $('outputText'),
+      inBadge: $('inBadge'),
+      outBadge: $('outBadge'),
+      inTitle: $('inTitle'),
+      outTitle: $('outTitle'),
+      inChars: $('inChars'),
+      inWords: $('inWords'),
+      outChars: $('outChars'),
+      outWords: $('outWords'),
+      outEmpty: $('outEmpty'),
+      progress: $('progress'),
+      dirButtons: Array.prototype.slice.call(document.querySelectorAll('.dir-btn')),
+      swapBtn: $('swapBtn'),
+      convertBtn: $('convertBtn'),
+      convertLabel: $('convertLabel'),
+      convertIcon: $('convertIcon'),
+      convertShortcut: $('convertShortcut'),
+      spinner: $('spinner'),
+      clearBtn: $('clearBtn'),
+      copyBtn: $('copyBtn'),
+      copyIcon: $('copyIcon'),
+      copyLabel: $('copyLabel'),
+      exampleSelect: $('exampleSelect'),
+      autoConvert: $('autoConvert'),
+      themeBtn: $('themeBtn'),
+      themeIcon: $('themeIcon'),
+      statusLine: $('statusLine'),
+      history: $('history'),
+      historyToggle: $('historyToggle'),
+      historyPanel: $('historyPanel'),
+      historyList: $('historyList'),
+      historyEmpty: $('historyEmpty'),
+      historyCount: $('historyCount'),
+      clearHistoryBtn: $('clearHistoryBtn'),
+      toasts: $('toasts'),
+      statusDot: $('statusDot'),
+      statusText: $('statusText')
+    };
+
+    /* ===================================================================
+       State
+       =================================================================== */
+
+    var state = {
+      direction: 'bn_to_syl',
+      auto: true,
+      history: [],
+      inFlight: null,   // AbortController for the current request
+      debounceId: null,
+      spinnerId: null,
+      copyResetId: null
+    };
+
+    var isMac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+
+    /* ===================================================================
+       localStorage helpers - never let a storage failure break the app
+       =================================================================== */
+
+    function readStore(key, fallback) {
+      try {
+        var raw = localStorage.getItem(key);
+        return raw === null ? fallback : raw;
+      } catch (e) {
+        return fallback;
+      }
+    }
+
+    function writeStore(key, value) {
+      try {
+        localStorage.setItem(key, value);
+      } catch (e) {
+        /* Private browsing or a full quota: settings just won't persist. */
+      }
+    }
+
+    /* ===================================================================
+       Toasts
+       =================================================================== */
+
+    var TOAST_ICONS = {
+      success: 'fa-solid fa-circle-check',
+      error: 'fa-solid fa-circle-exclamation',
+      info: 'fa-solid fa-circle-info'
+    };
+
+    function toast(message, type, ms) {
+      type = type || 'info';
+
+      var node = document.createElement('div');
+      node.className = 'toast toast--' + type;
+
+      var icon = document.createElement('i');
+      icon.className = TOAST_ICONS[type] || TOAST_ICONS.info;
+      icon.setAttribute('aria-hidden', 'true');
+
+      var text = document.createElement('span');
+      text.textContent = message; // textContent, so message content can never inject markup
+
+      var close = document.createElement('button');
+      close.type = 'button';
+      close.className = 'toast__close';
+      close.setAttribute('aria-label', 'Dismiss notification');
+      close.innerHTML = '<i class="fa-solid fa-xmark" aria-hidden="true"></i>';
+
+      node.appendChild(icon);
+      node.appendChild(text);
+      node.appendChild(close);
+      el.toasts.appendChild(node);
+
+      var timer = setTimeout(dismiss, ms || 3400);
+
+      function dismiss() {
+        clearTimeout(timer);
+        node.classList.add('is-leaving');
+        setTimeout(function () {
+          if (node.parentNode) { node.parentNode.removeChild(node); }
+        }, 220);
+      }
+
+      close.addEventListener('click', dismiss);
+    }
+
+    /* ===================================================================
+       Counting
+       =================================================================== */
+
+    function countChars(text) {
+      // Spread so multi-code-unit characters count as one.
+      return Array.from(text).length;
+    }
+
+    function countWords(text) {
+      var trimmed = text.trim();
+      return trimmed ? trimmed.split(/\s+/).length : 0;
+    }
+
+    function refreshCounts() {
+      var inText = el.input.value;
+      var outText = el.output.value;
+
+      el.inChars.textContent = countChars(inText);
+      el.inWords.textContent = countWords(inText);
+      el.outChars.textContent = countChars(outText);
+      el.outWords.textContent = countWords(outText);
+
+      el.outEmpty.hidden = outText.length > 0;
+      el.copyBtn.disabled = outText.length === 0;
+    }
+
+    /* ===================================================================
+       Direction
+       =================================================================== */
+
+    function applyDirection() {
+      var pair = DIRECTIONS[state.direction];
+      var src = SCRIPTS[pair.from];
+      var dst = SCRIPTS[pair.to];
+
+      el.workspace.dataset.direction = state.direction;
+
+      // Panel headers
+      el.inTitle.textContent = src.name;
+      el.outTitle.textContent = dst.name;
+      el.inBadge.textContent = src.glyph;
+      el.outBadge.textContent = dst.glyph;
+
+      // Render each field in the right script and announce the right language
+      el.input.className = 'script-field ' + src.cls;
+      el.output.className = 'script-field ' + dst.cls;
+      el.input.setAttribute('lang', src.lang);
+      el.output.setAttribute('lang', dst.lang);
+      el.input.placeholder = src.placeholder;
+
+      // Toggle the pressed state on the two direction buttons
+      el.dirButtons.forEach(function (btn) {
+        var active = btn.dataset.direction === state.direction;
+        btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+
+      writeStore(STORE.direction, state.direction);
+    }
+
+    function setDirection(direction, options) {
+      options = options || {};
+      if (!DIRECTIONS[direction] || direction === state.direction) {
+        if (direction === state.direction && options.convert) { scheduleConvert(true); }
+        return;
+      }
+      state.direction = direction;
+      applyDirection();
+      if (options.convert !== false) { scheduleConvert(true); }
+    }
+
+    /* ===================================================================
+       Conversion
+       =================================================================== */
+
+    function setBusy(busy) {
+      el.convertBtn.disabled = busy;
+      el.output.setAttribute('aria-busy', busy ? 'true' : 'false');
+      el.progress.classList.toggle('is-active', busy);
+
+      clearTimeout(state.spinnerId);
+
+      if (busy) {
+        // Delay the spinner so quick conversions don't flicker.
+        state.spinnerId = setTimeout(function () {
+          el.spinner.hidden = false;
+          el.convertIcon.hidden = true;
+          el.convertLabel.textContent = 'Converting';
+        }, SPINNER_DELAY_MS);
+      } else {
+        el.spinner.hidden = true;
+        el.convertIcon.hidden = false;
+        el.convertLabel.textContent = 'Convert';
+      }
+    }
+
+    function setStatus(message) {
+      el.statusLine.textContent = message || '';
+    }
+
+    /**
+     * Send the current input to the API.
+     * @param {boolean} silent  true for auto-convert (no toast on empty input)
+     */
+    function convert(silent) {
+      var text = el.input.value;
+
+      if (!text.trim()) {
+        el.output.value = '';
+        refreshCounts();
+        setStatus('');
+        if (!silent) { toast('Enter some text to convert.', 'info'); }
+        return;
+      }
+
+      if (countChars(text) > MAX_CHARS) {
+        toast('Text is over the ' + MAX_CHARS.toLocaleString() + ' character limit.', 'error');
+        return;
+      }
+
+      // Cancel any request still in flight so responses can't arrive out of order.
+      if (state.inFlight) { state.inFlight.abort(); }
+      var controller = new AbortController();
+      state.inFlight = controller;
+
+      var direction = state.direction;
+      setBusy(true);
+      setStatus('Converting');
+
+      fetch('/transliterate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: text, direction: direction }),
+        signal: controller.signal
+      })
+        .then(function (response) {
+          return response.json()
+            .catch(function () {
+              throw new Error('The server returned an unreadable response.');
+            })
+            .then(function (data) {
+              if (!response.ok) {
+                throw new Error(data.error || ('Request failed with status ' + response.status));
+              }
+              return data;
+            });
+        })
+        .then(function (data) {
+          el.output.value = data.output;
+          refreshCounts();
+          setStatus('Converted ' + countWords(text) + ' word' + (countWords(text) === 1 ? '' : 's'));
+          recordHistory(text, data.output, direction);
+        })
+        .catch(function (error) {
+          if (error.name === 'AbortError') { return; } // superseded by a newer request
+          el.output.value = '';
+          refreshCounts();
+          setStatus('');
+          toast(error.message || 'Could not reach the server.', 'error', 5000);
+        })
+        .then(function () {
+          if (state.inFlight === controller) {
+            state.inFlight = null;
+            setBusy(false);
+          }
+        });
+    }
+
+    function scheduleConvert(immediate) {
+      clearTimeout(state.debounceId);
+
+      if (immediate) {
+        convert(true);
+        return;
+      }
+
+      if (!state.auto) { return; }
+      state.debounceId = setTimeout(function () { convert(true); }, DEBOUNCE_MS);
+    }
+
+    /* ===================================================================
+       History
+       =================================================================== */
+
+    function loadHistory() {
+      try {
+        var parsed = JSON.parse(readStore(STORE.history, '[]'));
+        state.history = Array.isArray(parsed) ? parsed.slice(0, HISTORY_LIMIT) : [];
+      } catch (e) {
+        state.history = [];
+      }
+    }
+
+    function saveHistory() {
+      writeStore(STORE.history, JSON.stringify(state.history));
+    }
+
+    /**
+     * Add an entry, collapsing a run of keystrokes into one.
+     * If the newest entry is the same direction and one input is a prefix of
+     * the other, it is the same sentence being typed, so replace rather than
+     * append. That keeps auto-convert from filling the list with fragments.
+     */
+    function recordHistory(input, output, direction) {
+      if (!output) { return; }
+
+      var entry = { input: input, output: output, direction: direction, at: Date.now() };
+      var latest = state.history[0];
+
+      var isContinuation = latest &&
+        latest.direction === direction &&
+        (input.indexOf(latest.input) === 0 || latest.input.indexOf(input) === 0);
+
+      if (isContinuation) {
+        state.history[0] = entry;
+      } else {
+        state.history.unshift(entry);
+      }
+
+      state.history = state.history.slice(0, HISTORY_LIMIT);
+      saveHistory();
+      renderHistory();
+    }
+
+    function relativeTime(timestamp) {
+      var seconds = Math.round((Date.now() - timestamp) / 1000);
+      if (seconds < 60) { return 'just now'; }
+      var minutes = Math.round(seconds / 60);
+      if (minutes < 60) { return minutes + 'm ago'; }
+      var hours = Math.round(minutes / 60);
+      if (hours < 24) { return hours + 'h ago'; }
+      return Math.round(hours / 24) + 'd ago';
+    }
+
+    function renderHistory() {
+      el.historyList.innerHTML = '';
+      el.historyCount.textContent = state.history.length + ' of ' + HISTORY_LIMIT;
+      el.historyEmpty.hidden = state.history.length > 0;
+      el.clearHistoryBtn.disabled = state.history.length === 0;
+
+      state.history.forEach(function (entry, index) {
+        var pair = DIRECTIONS[entry.direction] || DIRECTIONS.bn_to_syl;
+
+        var li = document.createElement('li');
+        li.className = 'hist-item';
+
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'hist-item__btn';
+        btn.setAttribute('aria-label',
+          'Reuse conversion ' + (index + 1) + ', ' +
+          SCRIPTS[pair.from].name + ' to ' + SCRIPTS[pair.to].name);
+
+        var tag = document.createElement('span');
+        tag.className = 'hist-item__tag hist-item__tag--' + entry.direction;
+        tag.textContent = (pair.from === 'bn' ? 'BN' : 'SYL') + ' \u2192 ' +
+                          (pair.to === 'bn' ? 'BN' : 'SYL');
+        tag.title = relativeTime(entry.at);
+
+        var lineIn = document.createElement('span');
+        lineIn.className = 'hist-item__line hist-item__line--in ' + SCRIPTS[pair.from].cls;
+        lineIn.setAttribute('lang', SCRIPTS[pair.from].lang);
+        lineIn.textContent = entry.input;
+
+        var lineOut = document.createElement('span');
+        lineOut.className = 'hist-item__line hist-item__line--out ' + SCRIPTS[pair.to].cls;
+        lineOut.setAttribute('lang', SCRIPTS[pair.to].lang);
+        lineOut.textContent = entry.output;
+
+        btn.appendChild(tag);
+        btn.appendChild(lineIn);
+        btn.appendChild(lineOut);
+
+        btn.addEventListener('click', function () {
+          state.direction = entry.direction;
+          applyDirection();
+          el.input.value = entry.input;
+          el.output.value = entry.output;
+          refreshCounts();
+          setStatus('Restored from history');
+          el.input.focus();
+        });
+
+        li.appendChild(btn);
+        el.historyList.appendChild(li);
+      });
+    }
+
+    function toggleHistory(force) {
+      var open = typeof force === 'boolean' ? force : el.history.dataset.open !== 'true';
+      el.history.dataset.open = open ? 'true' : 'false';
+      el.historyToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      el.historyPanel.hidden = !open;
+    }
+
+    /* ===================================================================
+       Theme
+       =================================================================== */
+
+    function applyTheme(theme) {
+      document.documentElement.dataset.theme = theme;
+      var goingDark = theme === 'dark';
+      el.themeIcon.className = goingDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+      el.themeBtn.setAttribute('aria-label',
+        goingDark ? 'Switch to light theme' : 'Switch to dark theme');
+      writeStore(STORE.theme, theme);
+    }
+
+    /* ===================================================================
+       Copy
+       =================================================================== */
+
+    function copyOutput() {
+      var text = el.output.value;
+      if (!text) {
+        toast('There is nothing to copy yet.', 'info');
+        return;
+      }
+
+      function onSuccess() {
+        clearTimeout(state.copyResetId);
+        el.copyBtn.classList.add('is-done');
+        el.copyIcon.className = 'fa-solid fa-check';
+        el.copyLabel.textContent = 'Copied';
+        state.copyResetId = setTimeout(function () {
+          el.copyBtn.classList.remove('is-done');
+          el.copyIcon.className = 'fa-regular fa-copy';
+          el.copyLabel.textContent = 'Copy';
+        }, 1800);
+        toast('Copied to the clipboard.', 'success', 2200);
+      }
+
+      // The async Clipboard API needs a secure context; fall back to execCommand.
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(onSuccess, legacyCopy);
+      } else {
+        legacyCopy();
+      }
+
+      function legacyCopy() {
+        try {
+          el.output.removeAttribute('readonly');
+          el.output.select();
+          var ok = document.execCommand('copy');
+          el.output.setAttribute('readonly', 'readonly');
+          window.getSelection().removeAllRanges();
+          if (ok) { onSuccess(); } else { throw new Error('copy rejected'); }
+        } catch (e) {
+          el.output.setAttribute('readonly', 'readonly');
+          toast('Copying was blocked. Select the text and copy it manually.', 'error', 5000);
+        }
+      }
+    }
+
+    /* ===================================================================
+       Swap
+       =================================================================== */
+
+    function swap() {
+      var previousOutput = el.output.value;
+
+      state.direction = state.direction === 'bn_to_syl' ? 'syl_to_bn' : 'bn_to_syl';
+      applyDirection();
+
+      // Move the result across so you can keep converting from where you were.
+      el.input.value = previousOutput;
+      el.output.value = '';
+      refreshCounts();
+
+      // Half-turn of the swap icon, reset after the transition.
+      el.swapBtn.classList.add('is-spun');
+      setTimeout(function () { el.swapBtn.classList.remove('is-spun'); }, 400);
+
+      if (el.input.value.trim()) {
+        convert(true);
+      } else {
+        setStatus('');
+        el.input.focus();
+      }
+    }
+
+    /* ===================================================================
+       Clear
+       =================================================================== */
+
+    function clearAll() {
+      clearTimeout(state.debounceId);
+      if (state.inFlight) { state.inFlight.abort(); state.inFlight = null; }
+
+      el.input.value = '';
+      el.output.value = '';
+      el.exampleSelect.value = '';
+      refreshCounts();
+      setBusy(false);
+      setStatus('');
+      el.input.focus();
+      toast('Both fields cleared.', 'info', 2000);
+    }
+
+    /* ===================================================================
+       Examples
+       =================================================================== */
+
+    function buildExamples() {
+      EXAMPLES.forEach(function (example, index) {
+        var option = document.createElement('option');
+        option.value = String(index);
+        option.textContent = example.label;
+        el.exampleSelect.appendChild(option);
+      });
+    }
+
+    function loadExample(index) {
+      var example = EXAMPLES[index];
+      if (!example) { return; }
+
+      state.direction = example.direction;
+      applyDirection();
+      el.input.value = example.text;
+      refreshCounts();
+      convert(true);
+    }
+
+    /* ===================================================================
+       Health check
+       =================================================================== */
+
+    function checkHealth() {
+      fetch('/health')
+        .then(function (r) { return r.ok ? r.json() : Promise.reject(new Error('down')); })
+        .then(function (data) {
+          el.statusDot.className = 'status-dot is-ok';
+          el.statusText.textContent = 'Service ' + data.status;
+        })
+        .catch(function () {
+          el.statusDot.className = 'status-dot is-down';
+          el.statusText.textContent = 'Service unreachable';
+        });
+    }
+
+    /* ===================================================================
+       Wiring
+       =================================================================== */
+
+    function bindEvents() {
+      // Typing
+      el.input.addEventListener('input', function () {
+        refreshCounts();
+        el.exampleSelect.value = '';
+        if (!el.input.value.trim()) {
+          el.output.value = '';
+          refreshCounts();
+          setStatus('');
+          return;
+        }
+        scheduleConvert(false);
+      });
+
+      // Direction buttons
+      el.dirButtons.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          setDirection(btn.dataset.direction, { convert: true });
+        });
+      });
+
+      el.swapBtn.addEventListener('click', swap);
+      el.convertBtn.addEventListener('click', function () { convert(false); });
+      el.clearBtn.addEventListener('click', clearAll);
+      el.copyBtn.addEventListener('click', copyOutput);
+
+      el.exampleSelect.addEventListener('change', function () {
+        if (el.exampleSelect.value !== '') {
+          loadExample(Number(el.exampleSelect.value));
+        }
+      });
+
+      // Auto-convert toggle
+      el.autoConvert.addEventListener('change', function () {
+        state.auto = el.autoConvert.checked;
+        writeStore(STORE.auto, state.auto ? '1' : '0');
+        if (state.auto) {
+          toast('Auto-convert is on.', 'info', 2000);
+          if (el.input.value.trim()) { scheduleConvert(false); }
+        } else {
+          clearTimeout(state.debounceId);
+          toast('Auto-convert is off. Use the Convert button.', 'info', 2600);
+        }
+      });
+
+      // Theme toggle
+      el.themeBtn.addEventListener('click', function () {
+        var next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+        applyTheme(next);
+      });
+
+      // History
+      el.historyToggle.addEventListener('click', function () { toggleHistory(); });
+
+      el.clearHistoryBtn.addEventListener('click', function () {
+        state.history = [];
+        saveHistory();
+        renderHistory();
+        toast('History cleared.', 'info', 2000);
+      });
+
+      // Keyboard shortcuts, available anywhere on the page
+      document.addEventListener('keydown', function (event) {
+        var mod = event.ctrlKey || event.metaKey;
+        if (!mod) { return; }
+
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          convert(false);
+        } else if (event.shiftKey && (event.key === 'S' || event.key === 's')) {
+          event.preventDefault();
+          swap();
+        }
+      });
+    }
+
+    /* ===================================================================
+       Start
+       =================================================================== */
+
+    function init() {
+      // Restore preferences
+      applyTheme(document.documentElement.dataset.theme || 'light');
+
+      state.auto = readStore(STORE.auto, '1') !== '0';
+      el.autoConvert.checked = state.auto;
+
+      var savedDirection = readStore(STORE.direction, 'bn_to_syl');
+      state.direction = DIRECTIONS[savedDirection] ? savedDirection : 'bn_to_syl';
+      applyDirection();
+
+      // Show the platform's real modifier key
+      el.convertShortcut.textContent = (isMac ? '\u2318' : 'Ctrl') + '+\u23CE';
+
+      buildExamples();
+      loadHistory();
+      renderHistory();
+      refreshCounts();
+      bindEvents();
+      checkHealth();
+
+      el.input.focus();
+    }
+
+    init();
+  })();
+  </script>
+</body>
+</html>

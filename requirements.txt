@@ -1,0 +1,5 @@
+# Syltrans dependencies
+# Flask is the only runtime dependency. CORS is handled by an after_request
+# hook in app.py, so flask-cors is deliberately not required.
+Flask>=2.3.3,<4.0
+gunicorn>=21.2,<24.0

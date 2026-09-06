@@ -1,0 +1,1255 @@
+/* =========================================================================
+   style.css - Syltrans
+   Lives in the project root and is served by Flask at /style.css
+
+   Design direction
+   ----------------
+   Two scripts, two identities. Bengali carries a red-lead ink colour (the
+   rubricated headings of Nagri puthi manuscripts); Syloti Nagri carries the
+   deep green of Sylhet's tea gardens. Those two colours are assigned to the
+   input and output panels by direction, so the whole page re-colours when you
+   swap. Everything else stays quiet: paper-toned surfaces, hairline rules,
+   one accent per side.
+   ========================================================================= */
+
+/* -------------------------------------------------------------------------
+   1. Design tokens
+   ------------------------------------------------------------------------- */
+:root {
+  /* Script identity colours - these are the only saturated hues on the page */
+  --c-bangla: #ab372a;
+  --c-bangla-soft: rgba(171, 55, 42, 0.1);
+  --c-syloti: #1a6a51;
+  --c-syloti-soft: rgba(26, 106, 81, 0.1);
+
+  /* Paper-toned neutrals */
+  --c-bg: #eceee6;
+  --c-surface: #fbfbf7;
+  --c-surface-sunk: #f3f4ed;
+  --c-line: #d7dace;
+  --c-line-strong: #bfc4b4;
+  --c-text: #14201c;
+  --c-text-dim: #5c6b64;
+  --c-text-faint: #8a968f;
+
+  /* Feedback */
+  --c-danger: #b03323;
+  --c-success: #1a6a51;
+
+  /* Type */
+  --f-display: "Bricolage Grotesque", "IBM Plex Sans", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --f-bn: "Noto Serif Bengali", "Noto Sans Bengali", serif;
+  --f-syl: "Noto Sans Syloti Nagri", "Noto Serif Bengali", serif;
+
+  /* Spacing and shape */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 16px;
+  --shadow-sm: 0 1px 2px rgba(20, 32, 28, 0.06);
+  --shadow-md: 0 6px 24px -8px rgba(20, 32, 28, 0.22);
+  --shadow-lg: 0 18px 48px -16px rgba(20, 32, 28, 0.32);
+
+  /* Motion */
+  --ease: cubic-bezier(0.32, 0.72, 0.28, 1);
+  --dur: 220ms;
+}
+
+[data-theme="dark"] {
+  --c-bangla: #e58374;
+  --c-bangla-soft: rgba(229, 131, 116, 0.14);
+  --c-syloti: #4cc396;
+  --c-syloti-soft: rgba(76, 195, 150, 0.14);
+
+  --c-bg: #0e1512;
+  --c-surface: #16201c;
+  --c-surface-sunk: #111a16;
+  --c-line: #26312b;
+  --c-line-strong: #3a4840;
+  --c-text: #e7eae3;
+  --c-text-dim: #93a29a;
+  --c-text-faint: #6d7b74;
+
+  --c-danger: #e5776a;
+  --c-success: #4cc396;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 6px 24px -8px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 18px 48px -16px rgba(0, 0, 0, 0.7);
+}
+
+/* -------------------------------------------------------------------------
+   2. Reset and base
+   ------------------------------------------------------------------------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100vh;
+  background: var(--c-bg);
+  color: var(--c-text);
+  font-family: var(--f-body);
+  font-size: 15px;
+  line-height: 1.55;
+  /* Faint horizontal rule pattern, like ruled manuscript paper */
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 39px,
+    rgba(20, 32, 28, 0.045) 39px 40px
+  );
+  background-attachment: fixed;
+  transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+
+[data-theme="dark"] body {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 39px,
+    rgba(255, 255, 255, 0.022) 39px 40px
+  );
+}
+
+::selection {
+  background: var(--c-syloti-soft);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent, var(--c-syloti));
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* -------------------------------------------------------------------------
+   3. Shell
+   ------------------------------------------------------------------------- */
+.shell {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 20px 20px 64px;
+}
+
+/* -------------------------------------------------------------------------
+   4. Masthead
+   ------------------------------------------------------------------------- */
+.masthead {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  margin-bottom: 24px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+/* The mark is a real Syloti Nagri letter, not an abstract logo */
+.brand__mark {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  font-family: var(--f-syl);
+  font-size: 24px;
+  line-height: 1;
+  color: var(--c-surface);
+  background: var(--c-syloti);
+  border-radius: var(--r-md);
+  user-select: none;
+}
+
+.brand__text {
+  min-width: 0;
+}
+
+.brand__name {
+  font-family: var(--f-display);
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.brand__tagline {
+  font-family: var(--f-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-text-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.masthead__tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+/* -------------------------------------------------------------------------
+   5. Small controls
+   ------------------------------------------------------------------------- */
+.icon-btn {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  color: var(--c-text-dim);
+  background: var(--c-surface-sunk);
+  border: 1px solid var(--c-line);
+  border-radius: var(--r-md);
+  transition: background-color var(--dur) var(--ease),
+    color var(--dur) var(--ease), border-color var(--dur) var(--ease),
+    transform var(--dur) var(--ease);
+}
+
+.icon-btn:hover {
+  color: var(--c-text);
+  border-color: var(--c-line-strong);
+  transform: translateY(-1px);
+}
+
+.icon-btn:active {
+  transform: translateY(0);
+}
+
+/* Auto-convert switch */
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 12px 6px 10px;
+  background: var(--c-surface-sunk);
+  border: 1px solid var(--c-line);
+  border-radius: 999px;
+  cursor: pointer;
+  user-select: none;
+  transition: border-color var(--dur) var(--ease);
+}
+
+.switch:hover {
+  border-color: var(--c-line-strong);
+}
+
+.switch input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch__track {
+  position: relative;
+  width: 34px;
+  height: 19px;
+  flex: none;
+  background: var(--c-line-strong);
+  border-radius: 999px;
+  transition: background-color var(--dur) var(--ease);
+}
+
+.switch__track::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 15px;
+  height: 15px;
+  background: var(--c-surface);
+  border-radius: 50%;
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--dur) var(--ease);
+}
+
+.switch input:checked + .switch__track {
+  background: var(--c-syloti);
+}
+
+.switch input:checked + .switch__track::after {
+  transform: translateX(15px);
+}
+
+.switch input:focus-visible + .switch__track {
+  outline: 2px solid var(--c-syloti);
+  outline-offset: 2px;
+}
+
+.switch__label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--c-text-dim);
+  white-space: nowrap;
+}
+
+/* -------------------------------------------------------------------------
+   6. Direction ledger - the signature element
+      Two script tiles with an arrow between them. Choosing a direction or
+      pressing swap makes the tiles trade sides and the page re-colour.
+   ------------------------------------------------------------------------- */
+.ledger {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.ledger__pair {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-line);
+  border-radius: 999px;
+  box-shadow: var(--shadow-sm);
+}
+
+.dir-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 20px 9px 12px;
+  border-radius: 999px;
+  color: var(--c-text-dim);
+  transition: background-color var(--dur) var(--ease),
+    color var(--dur) var(--ease);
+}
+
+.dir-btn:hover {
+  background: var(--c-surface-sunk);
+  color: var(--c-text);
+}
+
+.dir-btn[aria-pressed="true"] {
+  color: var(--c-text);
+  background: var(--c-surface-sunk);
+  box-shadow: inset 0 0 0 1px var(--c-line-strong);
+}
+
+.dir-btn__glyphs {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 21px;
+  line-height: 1;
+}
+
+.dir-btn__from,
+.dir-btn__to {
+  opacity: 0.4;
+  transition: opacity var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+
+.dir-btn[aria-pressed="true"] .dir-btn__from,
+.dir-btn[aria-pressed="true"] .dir-btn__to {
+  opacity: 1;
+}
+
+.dir-btn__arrow {
+  font-size: 12px;
+  color: var(--c-text-faint);
+}
+
+.dir-btn__caption {
+  font-family: var(--f-mono);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Colour the glyphs by script, always */
+.glyph-bn {
+  font-family: var(--f-bn);
+  color: var(--c-bangla);
+}
+
+.glyph-syl {
+  font-family: var(--f-syl);
+  color: var(--c-syloti);
+}
+
+.ledger__hint {
+  font-family: var(--f-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--c-text-faint);
+  text-align: center;
+}
+
+kbd {
+  display: inline-block;
+  padding: 1px 5px;
+  font-family: var(--f-mono);
+  font-size: 10px;
+  color: var(--c-text-dim);
+  background: var(--c-surface);
+  border: 1px solid var(--c-line-strong);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+}
+
+/* -------------------------------------------------------------------------
+   7. Workspace: input | swap rail | output
+   ------------------------------------------------------------------------- */
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: stretch;
+  gap: 0;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  background: var(--c-surface);
+  border: 1px solid var(--c-line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  /* --accent is set per direction on .workspace below */
+  border-top: 3px solid var(--accent);
+  transition: border-color var(--dur) var(--ease),
+    background-color var(--dur) var(--ease);
+}
+
+/* Direction drives which script colour each panel wears */
+.workspace[data-direction="bn_to_syl"] .panel--in {
+  --accent: var(--c-bangla);
+  --accent-soft: var(--c-bangla-soft);
+}
+.workspace[data-direction="bn_to_syl"] .panel--out {
+  --accent: var(--c-syloti);
+  --accent-soft: var(--c-syloti-soft);
+}
+.workspace[data-direction="syl_to_bn"] .panel--in {
+  --accent: var(--c-syloti);
+  --accent-soft: var(--c-syloti-soft);
+}
+.workspace[data-direction="syl_to_bn"] .panel--out {
+  --accent: var(--c-bangla);
+  --accent-soft: var(--c-bangla-soft);
+}
+
+.panel__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--c-line);
+  background: var(--accent-soft);
+}
+
+.panel__badge {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--accent);
+  background: var(--c-surface);
+  border: 1px solid var(--accent);
+  border-radius: var(--r-sm);
+}
+
+.panel__titles {
+  min-width: 0;
+}
+
+.panel__title {
+  font-family: var(--f-display);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.panel__role {
+  font-family: var(--f-mono);
+  font-size: 10px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--c-text-faint);
+}
+
+.panel__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+/* Compact select used for the examples dropdown */
+.mini-select {
+  height: 30px;
+  max-width: 150px;
+  padding: 0 26px 0 10px;
+  font-size: 12px;
+  color: var(--c-text-dim);
+  background-color: var(--c-surface);
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: calc(100% - 13px) 13px, calc(100% - 9px) 13px;
+  background-size: 4px 4px, 4px 4px;
+  background-repeat: no-repeat;
+  border: 1px solid var(--c-line);
+  border-radius: var(--r-sm);
+  appearance: none;
+  cursor: pointer;
+  transition: border-color var(--dur) var(--ease);
+}
+
+.mini-select:hover {
+  border-color: var(--c-line-strong);
+}
+
+.mini-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 11px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--c-text-dim);
+  background: var(--c-surface);
+  border: 1px solid var(--c-line);
+  border-radius: var(--r-sm);
+  white-space: nowrap;
+  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease),
+    background-color var(--dur) var(--ease);
+}
+
+.mini-btn:hover:not(:disabled) {
+  color: var(--accent, var(--c-text));
+  border-color: var(--accent, var(--c-line-strong));
+}
+
+.mini-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.mini-btn.is-done {
+  color: var(--c-success);
+  border-color: var(--c-success);
+}
+
+/* Textareas */
+.panel__body {
+  position: relative;
+  flex: 1;
+}
+
+.script-field {
+  display: block;
+  width: 100%;
+  height: 260px;
+  padding: 20px 18px;
+  font-size: 21px;
+  line-height: 1.9;
+  color: var(--c-text);
+  background: transparent;
+  border: none;
+  resize: none;
+  outline: none;
+}
+
+.script-field::placeholder {
+  font-family: var(--f-body);
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--c-text-faint);
+}
+
+/* Script-specific rendering, toggled from JS by direction */
+.script-field.is-bn {
+  font-family: var(--f-bn);
+}
+
+.script-field.is-syl {
+  font-family: var(--f-syl);
+}
+
+.panel--out .script-field {
+  background: var(--c-surface-sunk);
+  cursor: text;
+}
+
+/* Empty-state message sitting over the output field */
+.panel__empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 6px;
+  justify-items: center;
+  padding: 20px;
+  text-align: center;
+  color: var(--c-text-faint);
+  pointer-events: none;
+  transition: opacity var(--dur) var(--ease);
+}
+
+.panel__empty[hidden] {
+  display: none;
+}
+
+.panel__empty i {
+  font-size: 20px;
+  opacity: 0.5;
+}
+
+.panel__empty span {
+  font-size: 13px;
+  max-width: 22ch;
+}
+
+/* Thin progress bar shown while a request is in flight */
+.panel__progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 120ms linear;
+}
+
+.panel__progress.is-active {
+  opacity: 1;
+}
+
+.panel__progress::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--accent);
+  transform: translateX(-100%);
+  animation: slide-through 900ms var(--ease) infinite;
+}
+
+@keyframes slide-through {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Footer of each panel: counters */
+.panel__foot {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 9px 14px;
+  border-top: 1px solid var(--c-line);
+  font-family: var(--f-mono);
+  font-size: 11px;
+  letter-spacing: 0.03em;
+  color: var(--c-text-faint);
+}
+
+.count strong {
+  font-weight: 600;
+  color: var(--c-text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.panel__foot .spacer {
+  margin-left: auto;
+}
+
+/* -------------------------------------------------------------------------
+   8. Swap rail between the panels
+   ------------------------------------------------------------------------- */
+.rail {
+  display: grid;
+  place-items: center;
+  width: 76px;
+  position: relative;
+}
+
+/* Hairline connecting the two panels behind the button */
+.rail::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: var(--c-line-strong);
+}
+
+.swap-btn {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  font-size: 15px;
+  color: var(--c-text-dim);
+  background: var(--c-surface);
+  border: 1px solid var(--c-line-strong);
+  border-radius: 50%;
+  box-shadow: var(--shadow-md);
+  transition: transform 380ms var(--ease), color var(--dur) var(--ease),
+    border-color var(--dur) var(--ease);
+}
+
+.swap-btn:hover {
+  color: var(--c-text);
+  border-color: var(--c-text-dim);
+}
+
+.swap-btn.is-spun {
+  transform: rotate(180deg);
+}
+
+/* -------------------------------------------------------------------------
+   9. Command bar
+   ------------------------------------------------------------------------- */
+.commands {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  height: 42px;
+  padding: 0 22px;
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+  white-space: nowrap;
+  transition: background-color var(--dur) var(--ease),
+    border-color var(--dur) var(--ease), color var(--dur) var(--ease),
+    transform 120ms var(--ease), opacity var(--dur) var(--ease);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn--primary {
+  color: var(--c-surface);
+  background: var(--c-text);
+}
+
+.btn--primary:hover:not(:disabled) {
+  background: var(--c-syloti);
+}
+
+[data-theme="dark"] .btn--primary {
+  color: var(--c-bg);
+}
+
+.btn--ghost {
+  color: var(--c-text-dim);
+  background: var(--c-surface);
+  border-color: var(--c-line);
+}
+
+.btn--ghost:hover:not(:disabled) {
+  color: var(--c-text);
+  border-color: var(--c-line-strong);
+}
+
+.btn__shortcut {
+  font-family: var(--f-mono);
+  font-size: 11px;
+  opacity: 0.65;
+}
+
+.commands__status {
+  margin-left: auto;
+  font-family: var(--f-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--c-text-faint);
+  min-height: 1em;
+}
+
+/* Inline spinner used inside the convert button */
+.spinner {
+  width: 15px;
+  height: 15px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 700ms linear infinite;
+}
+
+.spinner[hidden] {
+  display: none;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* -------------------------------------------------------------------------
+   10. History
+   ------------------------------------------------------------------------- */
+.history {
+  margin-top: 30px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-line);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+
+.history__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 13px 16px;
+  text-align: left;
+}
+
+.history__title {
+  font-family: var(--f-display);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.history__count {
+  font-family: var(--f-mono);
+  font-size: 11px;
+  color: var(--c-text-faint);
+}
+
+.history__chevron {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--c-text-faint);
+  transition: transform var(--dur) var(--ease);
+}
+
+.history[data-open="true"] .history__chevron {
+  transform: rotate(180deg);
+}
+
+.history__panel {
+  border-top: 1px solid var(--c-line);
+}
+
+.history__panel[hidden] {
+  display: none;
+}
+
+.history__list {
+  list-style: none;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.history__empty {
+  padding: 22px 16px;
+  font-size: 13px;
+  color: var(--c-text-faint);
+  text-align: center;
+}
+
+.hist-item {
+  border-bottom: 1px solid var(--c-line);
+}
+
+.hist-item:last-child {
+  border-bottom: none;
+}
+
+.hist-item__btn {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 4px 12px;
+  width: 100%;
+  padding: 11px 16px;
+  text-align: left;
+  transition: background-color var(--dur) var(--ease);
+}
+
+.hist-item__btn:hover {
+  background: var(--c-surface-sunk);
+}
+
+.hist-item__tag {
+  grid-row: span 2;
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  font-family: var(--f-mono);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  border-radius: var(--r-sm);
+  white-space: nowrap;
+}
+
+.hist-item__tag--bn_to_syl {
+  color: var(--c-syloti);
+  background: var(--c-syloti-soft);
+}
+
+.hist-item__tag--syl_to_bn {
+  color: var(--c-bangla);
+  background: var(--c-bangla-soft);
+}
+
+.hist-item__line {
+  font-size: 15px;
+  line-height: 1.5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hist-item__line--in {
+  color: var(--c-text-dim);
+}
+
+.hist-item__line--out {
+  color: var(--c-text);
+}
+
+.history__foot {
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px 16px;
+  border-top: 1px solid var(--c-line);
+  background: var(--c-surface-sunk);
+}
+
+/* -------------------------------------------------------------------------
+   11. Colophon
+   ------------------------------------------------------------------------- */
+.colophon {
+  margin-top: 28px;
+  font-family: var(--f-mono);
+  font-size: 11px;
+  letter-spacing: 0.03em;
+  color: var(--c-text-faint);
+  text-align: center;
+}
+
+.colophon a {
+  color: inherit;
+}
+
+.dot {
+  opacity: 0.5;
+  margin: 0 6px;
+}
+
+.status-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 5px;
+  border-radius: 50%;
+  background: var(--c-text-faint);
+  vertical-align: middle;
+  transition: background-color var(--dur) var(--ease);
+}
+
+.status-dot.is-ok {
+  background: var(--c-success);
+}
+
+.status-dot.is-down {
+  background: var(--c-danger);
+}
+
+/* -------------------------------------------------------------------------
+   12. Toasts
+   ------------------------------------------------------------------------- */
+.toasts {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  align-items: flex-end;
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(360px, calc(100vw - 36px));
+  padding: 11px 15px;
+  font-size: 13px;
+  color: var(--c-text);
+  background: var(--c-surface);
+  border: 1px solid var(--c-line);
+  border-left: 3px solid var(--c-text-dim);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-lg);
+  pointer-events: auto;
+  animation: toast-in 260ms var(--ease);
+}
+
+.toast.is-leaving {
+  animation: toast-out 200ms var(--ease) forwards;
+}
+
+.toast--success {
+  border-left-color: var(--c-success);
+}
+
+.toast--success i {
+  color: var(--c-success);
+}
+
+.toast--error {
+  border-left-color: var(--c-danger);
+}
+
+.toast--error i {
+  color: var(--c-danger);
+}
+
+.toast--info i {
+  color: var(--c-text-dim);
+}
+
+.toast__close {
+  margin-left: 4px;
+  padding: 2px;
+  font-size: 12px;
+  color: var(--c-text-faint);
+}
+
+.toast__close:hover {
+  color: var(--c-text);
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes toast-out {
+  to {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+}
+
+/* -------------------------------------------------------------------------
+   13. Responsive
+   ------------------------------------------------------------------------- */
+@media (max-width: 860px) {
+  .shell {
+    padding: 14px 14px 48px;
+  }
+
+  /* Stack the panels; the swap rail becomes a horizontal divider */
+  .workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rail {
+    width: auto;
+    height: 62px;
+  }
+
+  .rail::before {
+    left: 50%;
+    right: auto;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    height: auto;
+  }
+
+  /* Panels are stacked, so the swap arrow should point up and down */
+  .swap-btn i {
+    transform: rotate(90deg);
+  }
+
+  /* Physical shortcuts are not useful on a touch keyboard */
+  .ledger__hint {
+    display: none;
+  }
+
+  .masthead {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .masthead__tools {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .switch {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .ledger__pair {
+    flex-direction: column;
+    width: 100%;
+    border-radius: var(--r-lg);
+  }
+
+  .dir-btn {
+    width: 100%;
+    border-radius: var(--r-md);
+  }
+
+  .script-field {
+    height: 190px;
+    font-size: 19px;
+    padding: 16px 14px;
+  }
+
+  .commands__status {
+    width: 100%;
+    margin-left: 0;
+    text-align: center;
+  }
+
+  .btn {
+    flex: 1;
+    min-width: 130px;
+  }
+
+  .toasts {
+    left: 14px;
+    right: 14px;
+    bottom: 14px;
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 420px) {
+  .brand__tagline {
+    display: none;
+  }
+
+  .panel__actions .mini-select {
+    max-width: 108px;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   14. Motion preference
+   ------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .swap-btn.is-spun {
+    transform: none;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   15. Print
+   ------------------------------------------------------------------------- */
+@media print {
+  .masthead__tools,
+  .rail,
+  .commands,
+  .history,
+  .toasts,
+  .panel__actions {
+    display: none !important;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  .panel {
+    box-shadow: none;
+    break-inside: avoid;
+  }
+}
