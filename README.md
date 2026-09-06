@@ -100,4 +100,4 @@ permission is granted to copy, modify, distribute, sublicense, or use this
 code or any part of it, in source or compiled form, for any purpose, without
 prior written consent from the authors.
 
-Copyright (c) 2026 Misbah Al Mamun, Jisan Ahmed Fahim
+Copyright (c) 2026 Misbah Al Mamun
