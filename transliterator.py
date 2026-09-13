@@ -46,7 +46,11 @@ class SylhetiTransliterator:
             'ণ': 'ꠘ', 'ত': 'ꠔ', 'থ': 'ꠕ', 'দ': 'ꠖ', 'ধ': 'ꠗ', 'ন': 'ꠘ', 'প': 'ꠙ',
             'ফ': 'ꠚ', 'ব': 'ꠛ', 'ভ': 'ꠜ', 'ম': 'ꠝ', 'য': 'ꠎ', 'র': 'ꠞ', 'ল': 'ꠟ',
             'শ': 'ꠡ', 'ষ': 'ꠡ', 'স': 'ꠡ', 'হ': 'ꠢ', 'ড়': 'ꠠ', 'ঢ়': 'ꠠ',
-            'য়': 'ꠄ', '্': '꠆', '।': '।','়': ''
+            'য়': 'ꠄ', '্': '꠆', '।': '।','়': '',
+            # Precomposed ড় (U+09DC) / ঢ় (U+09DD). NFC never produces these
+            # (they are composition exclusions), so they are folded explicitly
+            # in convert_bn_to_syl before this map is applied.
+            '\u09DC': 'ꠠ', '\u09DD': 'ꠠ',
         }
 
         # Reverse (Syloti -> Bengali) tables are hand-built, NOT auto-inverted.
@@ -113,6 +117,11 @@ class SylhetiTransliterator:
         for bangla, syloti in self.juktoborno_map:
             temp_text = temp_text.replace(bangla, syloti)
 
+        # ড় / ঢ় survive NFC as ড+় / ঢ+় (composition exclusions), which the
+        # per-character pass would otherwise turn into ꠒ / ꠓ. Fold them first.
+        temp_text = temp_text.replace('\u09A1\u09BC', '\u09DC')
+        temp_text = temp_text.replace('\u09A2\u09BC', '\u09DD')
+
         # Apply basic character mapping
         final_output = ""
         for char in temp_text:
@@ -175,7 +184,7 @@ class SylhetiTransliterator:
             'ꠈꠣꠌꠣ': 'খাঁচা',
             'ꠇꠣꠞꠘ': 'কারণ',
             'ꠎꠤꠛꠘ': 'জীবন',
-            'ꠛꠣꠒꠤ': 'বাড়ি',
+            'ꠛꠣꠠꠤ': 'বাড়ি',
             'ꠖꠥꠞ': 'দূর',
             'ꠎꠣꠅꠀ': 'যাওআ',
             'ꠎꠔ꠆ꠘ': 'যত্ন',
