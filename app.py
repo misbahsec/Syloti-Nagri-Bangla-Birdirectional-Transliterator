@@ -7,6 +7,7 @@ import time
 
 from flask import Flask, jsonify, request, send_from_directory
 
+import sylphonetic
 from transliterator import SUPPORTED_DIRECTIONS, transliterate
 
 # Absolute path of the folder containing this file. Using an absolute path makes
@@ -15,6 +16,20 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Reject absurdly large payloads before they reach the transliterator.
 MAX_INPUT_CHARS = 20_000
+
+# How the input text is written.
+#   bangla   : Bangla script, sent straight to the engine (the original behaviour)
+#   phonetic : Sylheti typed in English letters. It is first rebuilt in Bangla
+#              script by sylphonetic.py, and that Bangla goes to the engine.
+#   auto     : detected per request. Any English letters (outside URLs, numbers
+#              and {escapes}) go through the phonetic step; Bangla-script parts
+#              pass through untouched, so code-mixed text works. The web page
+#              always sends auto.
+INPUT_MODES = ("auto", "bangla", "phonetic")
+
+# Roman -> Bangla lexicon. Loaded once per worker. Drop a lexicon.json next to
+# this file (python sylphonetic.py build corpus.txt lexicon.json) to extend it.
+PHONETIC_LEXICON, PHONETIC_SOURCE = sylphonetic.load_app_lexicon(BASE_DIR)
 
 app = Flask(__name__)
 START_TIME = time.time()
@@ -70,6 +85,11 @@ def health():
         "status": "ok" if engine_ok else "degraded",
         "engine": "SylhetiTransliterator",
         "directions": list(SUPPORTED_DIRECTIONS),
+        "input_modes": list(INPUT_MODES),
+        "phonetic": {
+            "lexicon_source": PHONETIC_SOURCE,
+            "lexicon_keys": len(PHONETIC_LEXICON),
+        },
         "uptime_seconds": round(time.time() - START_TIME, 1),
     }
     return jsonify(payload), (200 if engine_ok else 503)
@@ -80,11 +100,20 @@ def transliterate_route():
     """
     Convert text between Bengali and Syloti Nagri.
 
-    GET   /transliterate?text=...&direction=bn_to_syl
-    POST  /transliterate   {"text": "...", "direction": "bn_to_syl"}
+    GET   /transliterate?text=...&direction=bn_to_syl&input_mode=phonetic
+    POST  /transliterate   {"text": "...", "direction": "bn_to_syl",
+                            "input_mode": "phonetic"}
 
-    Response shape is unchanged from the original API:
+    input_mode is optional: "auto", "bangla" or "phonetic". It defaults to
+    "bangla", so existing API clients behave exactly as before. The original
+    response fields are unchanged:
         {"input": ..., "output": ..., "direction": ...}
+    For bn_to_syl with "auto" or "phonetic" these are added:
+        "input_mode": as sent,
+        "detected":   "bangla" | "phonetic" | "mixed"
+    and, whenever the phonetic step ran:
+        "bangla":     the Bangla-script text that was actually converted,
+        "guesses":    Roman words not found in the lexicon (rule-based guesses)
     """
     # Browsers send a preflight before cross-origin JSON POSTs.
     if request.method == "OPTIONS":
@@ -93,6 +122,7 @@ def transliterate_route():
     if request.method == "GET":
         text = request.args.get("text", "")
         direction = request.args.get("direction", "bn_to_syl")
+        input_mode = request.args.get("input_mode", "bangla")
     else:
         # silent=True so a wrong/missing Content-Type returns our JSON error
         # instead of Flask's default HTML 400 page.
@@ -103,6 +133,7 @@ def transliterate_route():
             return jsonify({"error": "JSON body must be an object"}), 400
         text = data.get("text", "")
         direction = data.get("direction", "bn_to_syl")
+        input_mode = data.get("input_mode", "bangla")
 
     if not isinstance(text, str):
         return jsonify({"error": "Field 'text' must be a string"}), 400
@@ -133,13 +164,59 @@ def transliterate_route():
             400,
         )
 
+    if input_mode not in INPUT_MODES:
+        return (
+            jsonify(
+                {
+                    "error": 'input_mode must be "auto", "bangla" or "phonetic"',
+                    "received": input_mode,
+                }
+            ),
+            400,
+        )
+
+    if input_mode == "phonetic" and direction != "bn_to_syl":
+        return (
+            jsonify({"error": 'Phonetic input only works with direction "bn_to_syl"'}),
+            400,
+        )
+
+    # Decide whether the phonetic step runs.
+    detected = None
+    if direction == "bn_to_syl" and input_mode in ("auto", "phonetic"):
+        detected = sylphonetic.detect(text)
+    run_phonetic = input_mode == "phonetic" or (
+        input_mode == "auto" and detected in ("phonetic", "mixed")
+    )
+
+    bangla, guesses = text, []
+    if run_phonetic:
+        try:
+            bangla, guesses = sylphonetic.parse(
+                text, PHONETIC_LEXICON, mark_guesses=True
+            )
+        except Exception as exc:  # noqa: BLE001
+            app.logger.exception("Phonetic parsing failed")
+            return jsonify({"error": f"Phonetic parsing failed: {exc}"}), 500
+
     try:
-        result = transliterate(text, direction)
+        result = transliterate(bangla, direction)
     except Exception as exc:  # noqa: BLE001 - surface engine faults as 500 JSON
         app.logger.exception("Transliteration failed")
         return jsonify({"error": f"Transliteration failed: {exc}"}), 500
 
-    return jsonify({"input": text, "output": result, "direction": direction})
+    payload = {"input": text, "output": result, "direction": direction}
+    if detected is not None:
+        payload.update({"input_mode": input_mode, "detected": detected})
+    if run_phonetic:
+        payload.update(
+            {
+                "bangla": bangla,
+                # De-duplicated, first-seen order
+                "guesses": list(dict.fromkeys(guesses)),
+            }
+        )
+    return jsonify(payload)
 
 
 # --------------------------------------------------------------------------- #

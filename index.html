@@ -58,6 +58,7 @@
                  aria-describedby="autoConvertHint">
           <span class="switch__track" aria-hidden="true"></span>
           <span class="switch__label">Convert as I type</span>
+          <span class="switch__label switch__label--short" aria-hidden="true">Live</span>
         </label>
         <span id="autoConvertHint" class="visually-hidden">
           When on, text is converted automatically half a second after you stop typing.
@@ -76,7 +77,7 @@
 
       <div class="ledger__pair" role="group" aria-label="Conversion direction">
         <button type="button" class="dir-btn" id="dirBnToSyl"
-                data-direction="bn_to_syl" aria-pressed="true">
+                data-direction="bn_to_syl" aria-pressed="true" title="Bangla to Syloti Nagri">
           <span class="dir-btn__glyphs" aria-hidden="true">
             <span class="dir-btn__from glyph-bn">অ</span>
             <i class="fa-solid fa-arrow-right dir-btn__arrow"></i>
@@ -86,7 +87,7 @@
         </button>
 
         <button type="button" class="dir-btn" id="dirSylToBn"
-                data-direction="syl_to_bn" aria-pressed="false">
+                data-direction="syl_to_bn" aria-pressed="false" title="Syloti Nagri to Bangla">
           <span class="dir-btn__glyphs" aria-hidden="true">
             <span class="dir-btn__from glyph-syl">ꠅ</span>
             <i class="fa-solid fa-arrow-right dir-btn__arrow"></i>
@@ -96,11 +97,31 @@
         </button>
       </div>
 
-      <p class="ledger__hint">
-        <kbd>Ctrl</kbd> <kbd>Enter</kbd> converts
-        <span class="dot">&bull;</span>
-        <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>S</kbd> swaps
-      </p>
+      <!--
+        Keyboard shortcuts now live in the button tooltips. This line says what
+        the tool is, in all three forms. The Bangla and Nagri are one sentence,
+        converted by this app. The run is repeated so the loop has no gap.
+      -->
+      <div class="ticker" role="note">
+        <div class="ticker__track">
+          <span class="ticker__run">
+            <span class="ticker__item">Syltrans is not a translator. It changes the letters, never the words: the sentence stays the same.</span>
+            <span class="ticker__sep" aria-hidden="true">&#10022;</span>
+            <span class="ticker__item glyph-bn" lang="bn">Syltrans অনুবাদক নয়। শুধু লিপি বদলায়, বাক্য একই থাকে।</span>
+            <span class="ticker__sep" aria-hidden="true">&#10022;</span>
+            <span class="ticker__item glyph-syl" lang="syl-Sylo">Syltrans ꠅꠘꠥꠛꠣꠖ ꠇꠞꠦ ꠘꠣ। ꠈꠣꠟꠤ ꠟꠤꠙꠤ ꠛꠖꠟꠣꠄ, ꠛꠣꠁꠇ꠆ꠇ ꠎꠦꠟꠣꠘ ꠀꠍꠦ ꠅꠟꠣꠘ ꠃ ꠕꠣꠇꠦ।</span>
+            <span class="ticker__sep" aria-hidden="true">&#10022;</span>
+          </span>
+          <span class="ticker__run" aria-hidden="true">
+            <span class="ticker__item">Syltrans is not a translator. It changes the letters, never the words: the sentence stays the same.</span>
+            <span class="ticker__sep" aria-hidden="true">&#10022;</span>
+            <span class="ticker__item glyph-bn" lang="bn">Syltrans অনুবাদক নয়। শুধু লিপি বদলায়, বাক্য একই থাকে।</span>
+            <span class="ticker__sep" aria-hidden="true">&#10022;</span>
+            <span class="ticker__item glyph-syl" lang="syl-Sylo">Syltrans ꠅꠘꠥꠛꠣꠖ ꠇꠞꠦ ꠘꠣ। ꠈꠣꠟꠤ ꠟꠤꠙꠤ ꠛꠖꠟꠣꠄ, ꠛꠣꠁꠇ꠆ꠇ ꠎꠦꠟꠣꠘ ꠀꠍꠦ ꠅꠟꠣꠘ ꠃ ꠕꠣꠇgettled.</span>
+            <span class="ticker__sep" aria-hidden="true">&#10022;</span>
+          </span>
+        </div>
+      </div>
     </section>
 
     <!-- ================= Workspace ================= -->
@@ -111,8 +132,8 @@
         <div class="panel__head">
           <span class="panel__badge" id="inBadge" aria-hidden="true">অ</span>
           <div class="panel__titles">
-            <h2 class="panel__title" id="inTitle">Bengali</h2>
-            <div class="panel__role">Source</div>
+            <h2 class="panel__title" id="inTitle">Bengali / Phonetic (Syloti)</h2>
+            <div class="panel__role" id="inRole">Source</div>
           </div>
 
           <div class="panel__actions">
@@ -130,9 +151,52 @@
                     placeholder="Type or paste text here."></textarea>
         </div>
 
+        <!-- Typing help for Bangla to Syloti. Opened by the i button in the footer. -->
+        <div class="info-pop" id="infoPop" role="region" aria-labelledby="infoTitle" hidden>
+          <div class="info-pop__head">
+            <h3 class="info-pop__title" id="infoTitle">How typing works</h3>
+            <button type="button" class="info-pop__close" id="infoClose" aria-label="Close help">&times;</button>
+          </div>
+
+          <!-- Filled in after a conversion that contained English letters -->
+          <div class="info-pop__reading" id="infoReading" hidden>
+            <div class="info-pop__label">
+              <span>Read as Bangla</span>
+              <span class="info-pop__note" id="infoNote"></span>
+            </div>
+            <p class="info-pop__bangla" id="infoBangla" lang="bn"></p>
+            <p class="info-pop__guesses" id="infoGuesses" hidden></p>
+          </div>
+
+          <ul class="info-pop__rules">
+            <li>Type in Bangla letters, English letters, or both in the same sentence. Syltrans works out which.</li>
+            <li>Words typed in English letters are first spelled in Bangla, then converted to Syloti Nagri. The Bangla it used appears above.</li>
+            <li>A capital <kbd>T</kbd> <kbd>D</kbd> <kbd>N</kbd> <kbd>R</kbd> inside a word gives <span lang="bn">ট ড ণ ড়</span>, as in <code>baRi</code> &rarr; <span lang="bn">বাড়ি</span>.</li>
+            <li>Put an English word in braces to keep it as it is: <code>{Facebook}</code>.</li>
+            <li>Words listed under &ldquo;Check these&rdquo; were not in the word list, so their spelling is a best guess.</li>
+          </ul>
+        </div>
+
         <div class="panel__foot">
           <span class="count"><strong id="inChars">0</strong> characters</span>
           <span class="count"><strong id="inWords">0</strong> words</span>
+
+          <span class="spacer"></span>
+
+          <!-- Syloti to Bangla only: on-screen Nagri keys -->
+          <button type="button" class="foot-btn" id="kbdToggle"
+                  aria-expanded="false" aria-controls="keyboard" hidden>
+            <span class="foot-btn__glyph glyph-syl" aria-hidden="true">ꠍ</span>
+            Nagri keyboard
+          </button>
+
+          <!-- Bangla to Syloti only: typing help and the Bangla reading -->
+          <button type="button" class="info-btn" id="infoBtn"
+                  aria-expanded="false" aria-controls="infoPop"
+                  aria-label="How typing works" title="How typing works">
+            <span aria-hidden="true">i</span>
+            <span class="info-btn__badge" id="infoBadge" hidden></span>
+          </button>
         </div>
       </section>
 
@@ -185,7 +249,7 @@
 
     <!-- ================= Commands ================= -->
     <div class="commands">
-      <button type="button" class="btn btn--primary" id="convertBtn">
+      <button type="button" class="btn btn--primary" id="convertBtn" title="Convert (Ctrl+Enter)">
         <span class="spinner" id="spinner" hidden></span>
         <i class="fa-solid fa-wand-magic-sparkles" id="convertIcon" aria-hidden="true"></i>
         <span id="convertLabel">Convert</span>
@@ -224,12 +288,113 @@
       </div>
     </section>
 
+    <!-- ================= About ================= -->
+    <section class="about" id="about" aria-labelledby="aboutTitle">
+      <header class="about__head">
+        <p class="about__eyebrow">About</p>
+        <h2 class="about__title" id="aboutTitle">Sylheti, and the script made for it</h2>
+      </header>
+
+      <div class="about__grid">
+        <article class="about__card">
+          <p class="about__glyph glyph-syl" lang="syl-Sylo" aria-hidden="true">ꠍꠤꠟꠐꠤ</p>
+          <h3 class="about__h">The language</h3>
+          <p>
+  Sylheti is an Eastern Indo-Aryan language spoken by around 11 million people,
+  primarily in the Sylhet Division of Bangladesh, the Barak Valley of Assam,
+  and northern Tripura. Large Sylheti-speaking communities also live in the
+  United Kingdom, the United States, Canada, and the Middle East.
+</p>
+
+<p>
+  Sylheti is closely related to Bengali, and many speakers use both languages.
+  However, Sylheti has its own distinct phonology, vocabulary, grammar, and
+  verb forms, giving it a linguistic identity of its own. It also has a rich
+  historical writing tradition, including the Syloti Nagri script, a distinct
+  script historically used to write the language. Sylheti has a long and unique
+  linguistic and cultural history and is an important part of the heritage of
+  the Sylheti-speaking community.
+</p>
+
+<p>
+  UNESCO classifies Sylheti as a vulnerable language, highlighting the importance
+  of documenting, preserving, and promoting it for future generations.
+</p>
+        </article>
+
+        <article class="about__card">
+          <p class="about__glyph glyph-syl" lang="syl-Sylo" aria-hidden="true">ꠍꠤꠟꠐꠤ ꠘꠣꠉꠞꠤ</p>
+          <h3 class="about__h">The script</h3>
+          <p>
+            Sylheti has its own alphabet, Syloti Nagri. No one knows exactly when it
+            appeared. Tradition ties it to the time of Shah Jalal in the early 14th
+            century; the oldest known manuscript is dated either 1559 or 1774, depending
+            on which calendar the date follows.
+          </p>
+          <p>
+            With only 5 vowels and 28 consonants it was quick to learn, and for centuries
+            people used it to copy and read <em>puthi</em>, the long religious and story
+            poems of the region. Around 1870 Moulvi Abdul Karim made woodblock type for it
+            and opened the Islamia Press in Sylhet town, and more presses followed in
+            Sunamganj, Shillong and Calcutta. Printing faded after Partition, and the
+            Islamia Press is reported to have burned during the Liberation War in 1971. Computer fonts arrived
+            in the late 1990s, and Unicode added the script in 2005.
+          </p>
+        </article>
+
+        <article class="about__card">
+          <p class="about__glyph" aria-hidden="true"><span class="glyph-bn">অ</span> &#8644; <span class="glyph-syl">ꠅ</span></p>
+          <h3 class="about__h">Why Syltrans</h3>
+          <p>
+            Today most people who write Sylheti use Bengali or English letters, and few
+            can read Nagri. That leaves old books closed to most readers, and it leaves
+            the script out of everyday writing.
+          </p>
+          <p>
+            Syltrans moves text between the two scripts. It changes letters, not words:
+            the same sentence goes in and comes out. Type in Bengali letters, English
+            letters or a mix to see it in Nagri, or paste Nagri to read it in Bengali
+            letters. The conversion follows fixed rules and a small word list, so check
+            names and rare words before you publish.
+          </p>
+        </article>
+      </div>
+
+      <p class="about__sources">
+        Sources:
+        <a href="https://sylheti.org.uk/siloti-nagri" target="_blank" rel="noopener">Sylheti Translation and Research (STAR)</a>,
+        <a href="https://www.omniglot.com/writing/sylheti.htm" target="_blank" rel="noopener">Omniglot</a>,
+        <a href="https://en.wikipedia.org/wiki/Sylheti_language" target="_blank" rel="noopener">Wikipedia: Sylheti language</a>.
+      </p>
+    </section>
+
     <!-- ================= Colophon ================= -->
     <footer class="colophon">
       <span><span class="status-dot" id="statusDot"></span><span id="statusText">Checking service</span></span>
       <span class="dot">&bull;</span>
       <span>All rights reserved &mdash; Copyright (c) 2026 Misbah Al Mamun</span>
     </footer>
+  </div>
+
+  <!--
+    Syloti Nagri on-screen keyboard (Syloti to Bangla input).
+    A sheet docked to the bottom of the screen. While it is open the device's
+    own keyboard is kept down; the close button brings it back.
+  -->
+  <div class="keyboard" id="keyboard" role="region" aria-label="Syloti Nagri keyboard" hidden>
+    <div class="kb-grip" id="kbGrip" role="separator" aria-orientation="horizontal"
+         aria-label="Drag to make the keys bigger or smaller" title="Drag to resize"></div>
+
+    <div class="kb-head">
+      <span>The small letter under each key is its Bangla sound.</span>
+      <button type="button" class="kb-close" id="kbdClose"
+              aria-label="Close the Nagri keyboard" title="Close">&#10005;</button>
+    </div>
+
+    <div class="kb-group" data-group="vowels" aria-label="Vowels"></div>
+    <div class="kb-group" data-group="signs" aria-label="Vowel signs"></div>
+    <div class="kb-group" data-group="consonants" aria-label="Consonants and marks"></div>
+    <div class="kb-group kb-group--marks" data-group="marks" aria-label="Space and delete"></div>
   </div>
 
   <!-- Toast stack -->
@@ -247,6 +412,7 @@
       theme: 'syltrans.theme',
       auto: 'syltrans.auto',
       direction: 'syltrans.direction',
+      keyboardScale: 'syltrans.kbScale',
       history: 'syltrans.history'
     };
 
@@ -273,6 +439,43 @@
       }
     };
 
+    // Source panel for Bangla to Syloti. The input can be Bangla script,
+    // Sylheti typed in English letters, or both mixed; the server detects which
+    // on every request (input_mode "auto"), so there is nothing to choose.
+    var AUTO_SOURCE = {
+      name: 'Bengali/Phonetic (Syloti)',
+      glyph: '\u0985',
+      cls: 'is-mixed',
+      lang: 'bn',
+      placeholder: 'Type in Bangla/English letters, or mix both. For example: আমি bala asi / আপনে কিতা করইন?'
+    };
+
+    // What the server found in the input, shown under the panel title
+    var DETECTED = {
+      bangla: { role: 'Source \u00b7 Bangla', tag: 'BN' },
+      phonetic: { role: 'Source \u00b7 Phonetic', tag: 'ROM' },
+      mixed: { role: 'Source \u00b7 Mixed', tag: 'MIX' }
+    };
+
+    // On-screen Syloti Nagri keys: [glyph, Bangla sound shown under it]
+    var NAGRI_KEYS = {
+      vowels: [['ꠀ', 'আ'], ['ꠁ', 'ই'], ['ꠃ', 'উ'], ['ꠄ', 'এ'], ['ꠅ', 'অ']],
+      signs: [['ꠣ', 'া'], ['ꠤ', 'ি'], ['ꠥ', 'ু'], ['ꠦ', 'ে'], ['ꠧ', 'ো'], ['ꠂ', 'ৈ']],
+      consonants: [
+        ['ꠇ', 'ক'], ['ꠈ', 'খ'], ['ꠉ', 'গ'], ['ꠊ', 'ঘ'], ['ꠌ', 'চ'], ['ꠍ', 'ছ'],
+        ['ꠎ', 'জ'], ['ꠏ', 'ঝ'], ['ꠐ', 'ট'], ['ꠑ', 'ঠ'], ['ꠒ', 'ড'], ['ꠓ', 'ঢ'],
+        ['ꠔ', 'ত'], ['ꠕ', 'থ'], ['ꠖ', 'দ'], ['ꠗ', 'ধ'], ['ꠘ', 'ন'], ['ꠙ', 'প'],
+        ['ꠚ', 'ফ'], ['ꠛ', 'ব'], ['ꠜ', 'ভ'], ['ꠝ', 'ম'], ['ꠞ', 'র'], ['ꠟ', 'ল'],
+        ['ꠠ', 'ড়'], ['ꠡ', 'স'], ['ꠢ', 'হ'], ['꠆', '্'], ['ꠋ', 'ং'],
+        ['।', 'দাঁড়ি'], ['?', '?']
+      ],
+      marks: [[' ', 'space'], ['\u232B', 'delete']]
+    };
+
+    // Key size multiplier for the on-screen keyboard (dragged from its grip)
+    var KB_SCALE_MIN = 0.75;
+    var KB_SCALE_MAX = 1.5;
+
     var DIRECTIONS = {
       bn_to_syl: { from: 'bn', to: 'syl' },
       syl_to_bn: { from: 'syl', to: 'bn' }
@@ -292,6 +495,16 @@
         text: 'সিলেটি নাগরী অইলো বউত পুরানা হরফ।'
       },
       {
+        label: 'Phonetic - greeting',
+        direction: 'bn_to_syl',
+        text: 'Assalamu alaikum, apne bala asoin ni? barir hokol bala asoin ni?'
+      },
+      {
+        label: 'Mixed - Bangla and English letters',
+        direction: 'bn_to_syl',
+        text: 'আমি bhala asi, apne kita koroin? বাড়ির hokol bala asoin ni?'
+      },
+      {
         label: 'Syloti - about Sylhet',
         direction: 'syl_to_bn',
         text: 'ꠡꠤꠟꠦꠐꠤ ꠘꠣꠉꠞꠤ ꠅꠁꠟꠧ ꠛꠃꠔ ꠙꠥꠞꠣꠘꠣ ꠢꠞꠚ'
@@ -299,7 +512,7 @@
       {
         label: 'Syloti - greeting',
         direction: 'syl_to_bn',
-        text: 'ꠀꠡꠡꠣꠟꠣꠝꠥ ꠀꠟꠣꠁꠇꠥꠝ, ꠀꠚꠘꠦ ꠜꠣꠟꠣ ꠀꠍꠁꠘ ꠘꠤ? ꠛꠣꠒꠤꠞ ꠢꠈꠟ ꠜꠣꠟꠣ ꠀꠍꠁꠘ ꠘꠤ?।'
+        text: 'ꠀꠡꠡꠣꠟꠣꠝꠥ ꠀꠟꠣꠁꠇꠥꠝ, ꠀꠚꠘꠦ ꠜꠣꠟꠣ ꠀꠍꠁꠘ ꠘꠤ? ꠛꠣꠠꠤꠞ ꠢꠈꠟ ꠜꠣꠟꠣ ꠀꠍꠁꠘ ꠘꠤ?।'
       }
     ];
 
@@ -324,6 +537,19 @@
       outEmpty: $('outEmpty'),
       progress: $('progress'),
       dirButtons: Array.prototype.slice.call(document.querySelectorAll('.dir-btn')),
+      inRole: $('inRole'),
+      infoBtn: $('infoBtn'),
+      infoBadge: $('infoBadge'),
+      infoPop: $('infoPop'),
+      infoClose: $('infoClose'),
+      infoReading: $('infoReading'),
+      infoNote: $('infoNote'),
+      infoBangla: $('infoBangla'),
+      infoGuesses: $('infoGuesses'),
+      keyboard: $('keyboard'),
+      kbdToggle: $('kbdToggle'),
+      kbdClose: $('kbdClose'),
+      kbGrip: $('kbGrip'),
       swapBtn: $('swapBtn'),
       convertBtn: $('convertBtn'),
       convertLabel: $('convertLabel'),
@@ -468,7 +694,8 @@
 
     function applyDirection() {
       var pair = DIRECTIONS[state.direction];
-      var src = SCRIPTS[pair.from];
+      var auto = state.direction === 'bn_to_syl';
+      var src = auto ? AUTO_SOURCE : SCRIPTS[pair.from];
       var dst = SCRIPTS[pair.to];
 
       el.workspace.dataset.direction = state.direction;
@@ -486,6 +713,20 @@
       el.output.setAttribute('lang', dst.lang);
       el.input.placeholder = src.placeholder;
 
+      // Phone keyboards capitalise and autocorrect English words, which ruins
+      // phonetic input (capitals mean retroflex, e.g. baRi).
+      el.input.setAttribute('autocapitalize', auto ? 'off' : 'sentences');
+      el.input.setAttribute('autocorrect', auto ? 'off' : 'on');
+
+      setDetected(null);
+      hideReading();
+
+      // i button belongs to Bangla to Syloti, the keyboard to Syloti to Bangla
+      el.infoBtn.hidden = !auto;
+      if (!auto) { setInfo(false); }
+      el.kbdToggle.hidden = auto;
+      if (auto) { closeKeyboard(false); }
+
       // Toggle the pressed state on the two direction buttons
       el.dirButtons.forEach(function (btn) {
         var active = btn.dataset.direction === state.direction;
@@ -493,6 +734,340 @@
       });
 
       writeStore(STORE.direction, state.direction);
+    }
+
+    /** Show what the server detected (null resets the label). */
+    function setDetected(detected) {
+      var info = detected && DETECTED[detected];
+      el.inRole.textContent = info ? info.role : 'Source';
+    }
+
+    /* ===================================================================
+       Typing help (i button)
+       =================================================================== */
+
+    function setInfo(open) {
+      el.infoPop.hidden = !open;
+      el.infoBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      el.infoBtn.classList.toggle('is-open', open);
+    }
+
+    /** Forget the last Bangla reading. The help text itself always stays. */
+    function hideReading() {
+      el.infoReading.hidden = true;
+      el.infoBangla.textContent = '';
+      el.infoNote.textContent = '';
+      el.infoGuesses.textContent = '';
+      el.infoGuesses.hidden = true;
+      el.infoBadge.hidden = true;
+      el.infoBadge.textContent = '';
+      el.infoBtn.setAttribute('aria-label', 'How typing works');
+    }
+
+    /**
+     * Store the Bangla text the server built from English letters, and the
+     * words it had to guess, inside the help popover. The i button shows a
+     * count when there are words worth checking.
+     */
+    function showReading(bangla, guesses) {
+      if (typeof bangla !== 'string' || !bangla) { hideReading(); return; }
+      guesses = guesses || [];
+
+      el.infoBangla.textContent = bangla;
+      el.infoReading.hidden = false;
+      el.infoGuesses.textContent = '';
+
+      if (!guesses.length) {
+        el.infoNote.textContent = 'All words recognised';
+        el.infoGuesses.hidden = true;
+        el.infoBadge.hidden = true;
+        el.infoBtn.setAttribute('aria-label', 'How typing works. See the Bangla reading.');
+        return;
+      }
+
+      el.infoNote.textContent = guesses.length + ' spelled by rule';
+
+      var lead = document.createElement('span');
+      lead.textContent = 'Check these: ';
+      el.infoGuesses.appendChild(lead);
+
+      guesses.slice(0, 12).forEach(function (word) {
+        var chip = document.createElement('code');
+        chip.className = 'info-pop__chip';
+        chip.textContent = word;
+        el.infoGuesses.appendChild(chip);
+      });
+      if (guesses.length > 12) {
+        el.infoGuesses.appendChild(document.createTextNode(' and ' + (guesses.length - 12) + ' more'));
+      }
+      el.infoGuesses.hidden = false;
+
+      el.infoBadge.textContent = guesses.length > 9 ? '9+' : String(guesses.length);
+      el.infoBadge.hidden = false;
+      el.infoBtn.setAttribute('aria-label',
+        'How typing works. ' + guesses.length + ' word' + (guesses.length === 1 ? '' : 's') + ' to check.');
+    }
+
+    /* ===================================================================
+       Syloti Nagri keyboard
+       =================================================================== */
+
+    // Phones and tablets, where the device keyboard is on screen
+    var isTouch = window.matchMedia('(pointer: coarse)').matches ||
+                  ('ontouchstart' in window && navigator.maxTouchPoints > 0);
+
+    var kb = {
+      scale: 1,
+      userScale: false,   // true once the user drags the grip; stops auto-fitting
+      observer: null
+    };
+
+    function buildKeyboard() {
+      Array.prototype.forEach.call(el.keyboard.querySelectorAll('.kb-group'), function (group) {
+        NAGRI_KEYS[group.dataset.group].forEach(function (pair) {
+          var glyph = pair[0];
+          var hint = pair[1];
+          var isSpace = glyph === ' ';
+          var isDelete = glyph === '\u232B';
+
+          var key = document.createElement('button');
+          key.type = 'button';
+          key.className = 'key' + (isSpace || isDelete ? ' key-wide' : '');
+          if (isSpace) { key.classList.add('key-space'); }
+
+          var main = document.createElement('span');
+          main.className = 'key-n' + (isSpace || isDelete ? '' : ' glyph-syl');
+          main.textContent = isSpace ? '\u2423' : glyph;
+
+          var sub = document.createElement('span');
+          sub.className = 'key-r';
+          sub.setAttribute('lang', isSpace || isDelete ? 'en' : 'bn');
+          sub.textContent = hint;
+
+          key.appendChild(main);
+          key.appendChild(sub);
+          key.setAttribute('aria-label', isDelete ? 'Delete' : isSpace ? 'Space' : glyph + ' (' + hint + ')');
+
+          // Pressing a key must not move focus out of the text box, or the
+          // caret is lost and some phones pop their own keyboard back up.
+          key.addEventListener('pointerdown', function (event) { event.preventDefault(); });
+          key.addEventListener('mousedown', function (event) { event.preventDefault(); });
+          key.addEventListener('click', function () { typeKey(glyph); });
+
+          group.appendChild(key);
+        });
+      });
+    }
+
+    function typeKey(glyph) {
+      var field = el.input;
+      var start = field.selectionStart;
+      var end = field.selectionEnd;
+
+      if (glyph === '\u232B') {
+        if (start === end && start > 0) {
+          // Delete one whole character, not half of a surrogate pair
+          var before = Array.from(field.value.slice(0, start));
+          before.pop();
+          field.setRangeText('', before.join('').length, end, 'end');
+        } else {
+          field.setRangeText('', start, end, 'end');
+        }
+      } else {
+        // setRangeText works on a read-only field too (see blockDeviceKeyboard)
+        field.setRangeText(glyph, start, end, 'end');
+      }
+
+      if (document.activeElement !== field) { field.focus({ preventScroll: true }); }
+      field.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    /* ---- Device keyboard ---------------------------------------------- */
+
+    /**
+     * Keep the phone's own keyboard down while the Nagri sheet is open.
+     * inputmode="none" does this on current browsers without touching the
+     * caret. Some keyboards ignore it; watchDeviceKeyboard() catches that and
+     * falls back to read-only, which no phone opens a keyboard for.
+     */
+    function blockDeviceKeyboard() {
+      el.input.setAttribute('inputmode', 'none');
+      if (isTouch && document.activeElement === el.input) {
+        // A keyboard that is already up only closes on blur
+        el.input.blur();
+        el.input.focus({ preventScroll: true });
+      }
+    }
+
+    function releaseDeviceKeyboard(bringBack) {
+      el.input.removeAttribute('inputmode');
+      el.input.readOnly = false;
+      if (!bringBack) { return; }
+      // Must run inside the tap on the close button, or phones refuse to
+      // open their keyboard. Blur first so the focus counts as new.
+      el.input.blur();
+      el.input.focus({ preventScroll: true });
+    }
+
+    function deviceKeyboardHeight() {
+      var view = window.visualViewport;
+      if (!view) { return 0; }
+      return Math.max(0, window.innerHeight - view.height - view.offsetTop);
+    }
+
+    function watchDeviceKeyboard() {
+      if (el.keyboard.hidden) { return; }
+      // Taller than any browser toolbar change: the device keyboard came up anyway
+      if (isTouch && deviceKeyboardHeight() > 120 && !el.input.readOnly) {
+        el.input.readOnly = true;
+        el.input.blur();
+        el.input.focus({ preventScroll: true });
+      }
+      placeKeyboard();
+    }
+
+    /* ---- Sheet size and position -------------------------------------- */
+
+    function applyScale(scale) {
+      kb.scale = Math.max(KB_SCALE_MIN, Math.min(KB_SCALE_MAX, scale));
+      el.keyboard.style.setProperty('--kb-scale', kb.scale.toFixed(3));
+    }
+
+    /** Shrink the keys until the whole keyboard fits, unless the user sized it. */
+    function fitToScreen() {
+      if (kb.userScale) { return; }
+      applyScale(1);
+      var guard = 0;
+      while (el.keyboard.scrollHeight > el.keyboard.clientHeight + 1 &&
+             kb.scale > KB_SCALE_MIN && guard < 12) {
+        applyScale(kb.scale - 0.05);
+        guard += 1;
+      }
+    }
+
+    /** Keep the sheet on the bottom edge and leave room for it under the page. */
+    function placeKeyboard() {
+      if (el.keyboard.hidden) {
+        el.keyboard.style.bottom = '';
+        document.body.style.removeProperty('--kb-space');
+        return;
+      }
+      el.keyboard.style.bottom = deviceKeyboardHeight() + 'px';
+      document.body.style.setProperty('--kb-space', el.keyboard.offsetHeight + 'px');
+    }
+
+    /** Scroll just enough that the text box sits above the sheet. */
+    function revealInput() {
+      var rect = el.input.getBoundingClientRect();
+      var visibleBottom = window.innerHeight - el.keyboard.offsetHeight - 12;
+      if (rect.bottom <= visibleBottom) { return; }
+      var needed = rect.bottom - visibleBottom;
+      var room = Math.max(0, rect.top - 12);   // never push the top out of view
+      window.scrollBy({ top: Math.min(needed, room), behavior: 'smooth' });
+    }
+
+    /* ---- Open / close -------------------------------------------------- */
+
+    function openKeyboard() {
+      if (!el.keyboard.hidden) { return; }
+
+      el.keyboard.hidden = false;
+      document.body.classList.add('kb-open');
+      el.kbdToggle.setAttribute('aria-expanded', 'true');
+      el.kbdToggle.classList.add('is-open');
+
+      var saved = Number(readStore(STORE.keyboardScale, ''));
+      if (saved) {
+        kb.userScale = true;
+        applyScale(saved);
+      } else {
+        fitToScreen();
+      }
+
+      blockDeviceKeyboard();
+      if (document.activeElement !== el.input) { el.input.focus({ preventScroll: true }); }
+
+      placeKeyboard();
+      requestAnimationFrame(revealInput);
+    }
+
+    /**
+     * @param {boolean} bringBackDevice  true when the user closed the sheet
+     *   themselves; the device keyboard comes back so they can keep typing.
+     */
+    function closeKeyboard(bringBackDevice) {
+      if (el.keyboard.hidden) { releaseDeviceKeyboard(false); return; }
+
+      el.keyboard.hidden = true;
+      document.body.classList.remove('kb-open');
+      el.kbdToggle.setAttribute('aria-expanded', 'false');
+      el.kbdToggle.classList.remove('is-open');
+      placeKeyboard();
+
+      releaseDeviceKeyboard(bringBackDevice && isTouch);
+      // On a computer there is no device keyboard to bring back; just keep typing
+      if (bringBackDevice && !isTouch) { el.input.focus({ preventScroll: true }); }
+    }
+
+    function bindKeyboard() {
+      // Drag the grip up for bigger keys, down for smaller ones
+      var drag = null;
+
+      el.kbGrip.addEventListener('pointerdown', function (event) {
+        drag = { y: event.clientY, scale: kb.scale, height: el.keyboard.offsetHeight };
+        el.kbGrip.setPointerCapture(event.pointerId);
+        el.keyboard.classList.add('is-resizing');
+        event.preventDefault();
+      });
+      el.kbGrip.addEventListener('pointermove', function (event) {
+        if (!drag) { return; }
+        var grow = (drag.y - event.clientY) / Math.max(drag.height, 1);
+        kb.userScale = true;
+        applyScale(drag.scale * (1 + grow * 1.4));
+        placeKeyboard();
+      });
+      ['pointerup', 'pointercancel'].forEach(function (type) {
+        el.kbGrip.addEventListener(type, function () {
+          if (!drag) { return; }
+          drag = null;
+          el.keyboard.classList.remove('is-resizing');
+          writeStore(STORE.keyboardScale, kb.scale.toFixed(3));
+        });
+      });
+      // Double-tap the grip to go back to the size that fits the screen
+      el.kbGrip.addEventListener('dblclick', function () {
+        kb.userScale = false;
+        writeStore(STORE.keyboardScale, '');
+        fitToScreen();
+        placeKeyboard();
+      });
+
+      el.kbdToggle.addEventListener('click', function () {
+        if (el.keyboard.hidden) { openKeyboard(); } else { closeKeyboard(true); }
+      });
+      el.kbdClose.addEventListener('click', function () { closeKeyboard(true); });
+
+      // Typing on the device keyboard is blocked, but tapping the text box to
+      // move the caret still works.
+      el.input.addEventListener('focus', function () {
+        if (!el.keyboard.hidden) { el.input.setAttribute('inputmode', 'none'); }
+      });
+
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', watchDeviceKeyboard);
+        window.visualViewport.addEventListener('scroll', placeKeyboard);
+      }
+      window.addEventListener('resize', function () {
+        if (el.keyboard.hidden) { return; }
+        fitToScreen();
+        placeKeyboard();
+      });
+
+      // Height changes when keys wrap onto a new row
+      if (window.ResizeObserver) {
+        kb.observer = new ResizeObserver(placeKeyboard);
+        kb.observer.observe(el.keyboard);
+      }
     }
 
     function setDirection(direction, options) {
@@ -561,13 +1136,15 @@
       state.inFlight = controller;
 
       var direction = state.direction;
+      // bn_to_syl always asks the server to detect Bangla / phonetic / mixed
+      var mode = direction === 'bn_to_syl' ? 'auto' : 'bangla';
       setBusy(true);
       setStatus('Converting');
 
       fetch('/transliterate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: text, direction: direction }),
+        body: JSON.stringify({ text: text, direction: direction, input_mode: mode }),
         signal: controller.signal
       })
         .then(function (response) {
@@ -585,12 +1162,29 @@
         .then(function (data) {
           el.output.value = data.output;
           refreshCounts();
-          setStatus('Converted ' + countWords(text) + ' word' + (countWords(text) === 1 ? '' : 's'));
-          recordHistory(text, data.output, direction);
+
+          var words = countWords(text);
+          var status = 'Converted ' + words + ' word' + (words === 1 ? '' : 's');
+
+          setDetected(data.detected || null);
+
+          // data.bangla is only present when English letters were converted
+          if (typeof data.bangla === 'string') {
+            var guesses = data.guesses || [];
+            showReading(data.bangla, guesses);
+            if (guesses.length) { status += ', ' + guesses.length + ' spelled by rule'; }
+          } else {
+            hideReading();
+          }
+
+          setStatus(status);
+          recordHistory(text, data.output, direction, data.detected, data.bangla, data.guesses);
         })
         .catch(function (error) {
           if (error.name === 'AbortError') { return; } // superseded by a newer request
           el.output.value = '';
+          hideReading();
+          setDetected(null);
           refreshCounts();
           setStatus('');
           toast(error.message || 'Could not reach the server.', 'error', 5000);
@@ -638,12 +1232,19 @@
      * the other, it is the same sentence being typed, so replace rather than
      * append. That keeps auto-convert from filling the list with fragments.
      */
-    function recordHistory(input, output, direction) {
+    function recordHistory(input, output, direction, detected, bangla, guesses) {
       if (!output) { return; }
 
       var entry = { input: input, output: output, direction: direction, at: Date.now() };
+      if (detected) { entry.detected = detected; }
+      if (typeof bangla === 'string') {
+        entry.bangla = bangla;
+        entry.guesses = guesses || [];
+      }
       var latest = state.history[0];
 
+      // Detection can change mid-sentence (Bangla, then an English word), so it
+      // is deliberately not part of the continuation test.
       var isContinuation = latest &&
         latest.direction === direction &&
         (input.indexOf(latest.input) === 0 || latest.input.indexOf(input) === 0);
@@ -677,6 +1278,10 @@
 
       state.history.forEach(function (entry, index) {
         var pair = DIRECTIONS[entry.direction] || DIRECTIONS.bn_to_syl;
+        var autoEntry = entry.direction === 'bn_to_syl';
+        var srcMeta = autoEntry ? AUTO_SOURCE : SCRIPTS[pair.from];
+        // entry.mode === 'phonetic' comes from history saved before auto-detect
+        var detected = entry.detected || (entry.mode === 'phonetic' ? 'phonetic' : null);
 
         var li = document.createElement('li');
         li.className = 'hist-item';
@@ -686,17 +1291,18 @@
         btn.className = 'hist-item__btn';
         btn.setAttribute('aria-label',
           'Reuse conversion ' + (index + 1) + ', ' +
-          SCRIPTS[pair.from].name + ' to ' + SCRIPTS[pair.to].name);
+          srcMeta.name + ' to ' + SCRIPTS[pair.to].name);
 
         var tag = document.createElement('span');
         tag.className = 'hist-item__tag hist-item__tag--' + entry.direction;
-        tag.textContent = (pair.from === 'bn' ? 'BN' : 'SYL') + ' \u2192 ' +
+        tag.textContent = ((autoEntry && DETECTED[detected]) ? DETECTED[detected].tag :
+                           (pair.from === 'bn' ? 'BN' : 'SYL')) + ' \u2192 ' +
                           (pair.to === 'bn' ? 'BN' : 'SYL');
         tag.title = relativeTime(entry.at);
 
         var lineIn = document.createElement('span');
-        lineIn.className = 'hist-item__line hist-item__line--in ' + SCRIPTS[pair.from].cls;
-        lineIn.setAttribute('lang', SCRIPTS[pair.from].lang);
+        lineIn.className = 'hist-item__line hist-item__line--in ' + srcMeta.cls;
+        lineIn.setAttribute('lang', srcMeta.lang);
         lineIn.textContent = entry.input;
 
         var lineOut = document.createElement('span');
@@ -713,6 +1319,8 @@
           applyDirection();
           el.input.value = entry.input;
           el.output.value = entry.output;
+          if (autoEntry) { setDetected(detected); }
+          if (typeof entry.bangla === 'string') { showReading(entry.bangla, entry.guesses); }
           refreshCounts();
           setStatus('Restored from history');
           el.input.focus();
@@ -827,6 +1435,8 @@
       el.input.value = '';
       el.output.value = '';
       el.exampleSelect.value = '';
+      hideReading();
+      setDetected(null);
       refreshCounts();
       setBusy(false);
       setStatus('');
@@ -886,6 +1496,7 @@
         el.exampleSelect.value = '';
         if (!el.input.value.trim()) {
           el.output.value = '';
+          hideReading();
           refreshCounts();
           setStatus('');
           return;
@@ -899,6 +1510,17 @@
           setDirection(btn.dataset.direction, { convert: true });
         });
       });
+
+      // Typing help popover
+      el.infoBtn.addEventListener('click', function () { setInfo(el.infoPop.hidden); });
+      el.infoClose.addEventListener('click', function () { setInfo(false); el.infoBtn.focus(); });
+      document.addEventListener('keydown', function (event) {
+        if (event.key !== 'Escape') { return; }
+        if (!el.infoPop.hidden) { setInfo(false); el.infoBtn.focus(); }
+        else if (!el.keyboard.hidden) { closeKeyboard(false); }
+      });
+
+      bindKeyboard();
 
       el.swapBtn.addEventListener('click', swap);
       el.convertBtn.addEventListener('click', function () { convert(false); });
@@ -972,7 +1594,10 @@
 
       // Show the platform's real modifier key
       el.convertShortcut.textContent = (isMac ? '\u2318' : 'Ctrl') + '+\u23CE';
+      el.convertBtn.title = 'Convert (' + (isMac ? '\u2318' : 'Ctrl') + '+Enter)';
+      el.swapBtn.title = 'Swap (' + (isMac ? '\u2318' : 'Ctrl') + '+Shift+S)';
 
+      buildKeyboard();
       buildExamples();
       loadHistory();
       renderHistory();

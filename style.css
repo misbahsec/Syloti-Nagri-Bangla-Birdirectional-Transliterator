@@ -103,7 +103,7 @@ body {
   color: var(--c-text);
   font-family: var(--f-body);
   font-size: 15px;
-  line-height: 1.55;
+  line-height: 1.5;
   /* Faint horizontal rule pattern, like ruled manuscript paper */
   background-image: repeating-linear-gradient(
     to bottom,
@@ -331,6 +331,10 @@ button {
   white-space: nowrap;
 }
 
+.switch__label--short {
+  display: none;
+}
+
 /* -------------------------------------------------------------------------
    6. Direction ledger - the signature element
       Two script tiles with an arrow between them. Choosing a direction or
@@ -340,15 +344,15 @@ button {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
-  margin-bottom: 22px;
+  gap: 12px;
+  margin-bottom: 20px;
 }
 
 .ledger__pair {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 8px;
+  gap: 3px;
+  padding: 5px;
   background: var(--c-surface);
   border: 1px solid var(--c-line);
   border-radius: 999px;
@@ -358,8 +362,8 @@ button {
 .dir-btn {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 9px 20px 9px 12px;
+  gap: 10px;
+  padding: 6px 16px 6px 10px;
   border-radius: 999px;
   color: var(--c-text-dim);
   transition: background-color var(--dur) var(--ease),
@@ -380,8 +384,8 @@ button {
 .dir-btn__glyphs {
   display: flex;
   align-items: center;
-  gap: 7px;
-  font-size: 21px;
+  gap: 6px;
+  font-size: 17px;
   line-height: 1;
 }
 
@@ -397,13 +401,13 @@ button {
 }
 
 .dir-btn__arrow {
-  font-size: 12px;
+  font-size: 10px;
   color: var(--c-text-faint);
 }
 
 .dir-btn__caption {
   font-family: var(--f-mono);
-  font-size: 11px;
+  font-size: 10.5px;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -420,12 +424,87 @@ button {
   color: var(--c-syloti);
 }
 
-.ledger__hint {
-  font-family: var(--f-mono);
-  font-size: 11px;
-  letter-spacing: 0.04em;
+/* Scrolling line under the direction switch: what the tool does and does not do */
+.ticker {
+  position: relative;
+  width: min(100%, 760px);
+  overflow: hidden;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--c-text-dim);
+  /* fade the text in and out at both edges */
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+
+.ticker__track {
+  display: flex;
+  width: max-content;
+  animation: ticker-scroll 38s linear infinite;
+}
+
+.ticker:hover .ticker__track,
+.ticker:focus-within .ticker__track {
+  animation-play-state: paused;
+}
+
+.ticker__run {
+  display: flex;
+  align-items: baseline;
+  flex: none;
+  gap: 14px;
+  padding-right: 14px;
+  white-space: nowrap;
+}
+
+/* Script fonts, but the calm text colour: red body text reads as an error */
+.ticker__item.glyph-bn,
+.ticker__item.glyph-syl {
+  font-size: 14px;
+  color: inherit;
+}
+
+.ticker__sep {
+  font-size: 9px;
   color: var(--c-text-faint);
-  text-align: center;
+}
+
+@keyframes ticker-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* No motion: show the sentence once, wrapped and centred */
+@media (prefers-reduced-motion: reduce) {
+  .ticker {
+    -webkit-mask-image: none;
+    mask-image: none;
+    text-align: center;
+  }
+
+  .ticker__track {
+    width: auto;
+    animation: none !important;
+    justify-content: center;
+  }
+
+  .ticker__run {
+    flex: 1 1 auto;
+    min-width: 0;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 2px 10px;
+    padding-right: 0;
+    white-space: normal;
+  }
+
+  .ticker__run + .ticker__run {
+    display: none;
+  }
 }
 
 kbd {
@@ -598,9 +677,9 @@ kbd {
   display: block;
   width: 100%;
   height: 260px;
-  padding: 20px 18px;
-  font-size: 21px;
-  line-height: 1.9;
+  padding: 18px 18px;
+  font-size: 20px;
+  line-height: 1.6;
   color: var(--c-text);
   background: transparent;
   border: none;
@@ -611,7 +690,7 @@ kbd {
 .script-field::placeholder {
   font-family: var(--f-body);
   font-size: 15px;
-  line-height: 1.7;
+  line-height: 1.5;
   color: var(--c-text-faint);
 }
 
@@ -622,6 +701,252 @@ kbd {
 
 .script-field.is-syl {
   font-family: var(--f-syl);
+}
+
+/* Bangla to Syloti source: Bangla, English letters, or both in one line.
+   Fallback is per glyph, so Latin takes Plex Sans and Bangla takes Noto. */
+.script-field.is-mixed {
+  font-family: "IBM Plex Sans", var(--f-bn);
+}
+
+/* Keeps the output column one tone when the input panel grows taller */
+.panel--out .panel__body {
+  background: var(--c-surface-sunk);
+}
+
+/* ---- Footer buttons: Nagri keyboard toggle and the i (typing help) button ---- */
+.foot-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 10px;
+  font-family: var(--f-body);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--c-text-dim);
+  background: var(--c-surface);
+  border: 1px solid var(--c-line);
+  border-radius: var(--r-sm);
+  white-space: nowrap;
+  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+
+.foot-btn[hidden] {
+  display: none;
+}
+
+.foot-btn:hover,
+.foot-btn.is-open {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.foot-btn__glyph {
+  font-size: 15px;
+  line-height: 1;
+}
+
+.info-btn {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  flex: none;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 14px;
+  font-style: italic;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--c-text-dim);
+  background: var(--c-surface);
+  border: 1px solid var(--c-line-strong);
+  border-radius: 50%;
+  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease),
+    background-color var(--dur) var(--ease);
+}
+
+.info-btn[hidden] {
+  display: none;
+}
+
+.info-btn:hover,
+.info-btn.is-open {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.info-btn.is-open {
+  background: var(--accent-soft);
+}
+
+/* Count of words worth checking */
+.info-btn__badge {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  font-family: var(--f-mono);
+  font-size: 9.5px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: 16px;
+  text-align: center;
+  color: var(--c-surface);
+  background: var(--accent);
+  border-radius: 8px;
+}
+
+.info-btn__badge[hidden] {
+  display: none;
+}
+
+/* ---- Typing help panel, opened from the i button in the input footer ---- */
+.info-pop {
+  padding: 12px 14px 14px;
+  background: var(--c-surface);
+  border-top: 1px dashed var(--c-line-strong);
+  animation: pop-in 160ms var(--ease);
+}
+
+.info-pop[hidden] {
+  display: none;
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.info-pop__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.info-pop__title {
+  font-family: var(--f-display);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.info-pop__close {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--c-text-faint);
+  border-radius: var(--r-sm);
+}
+
+.info-pop__close:hover {
+  color: var(--c-text);
+  background: var(--c-surface-sunk);
+}
+
+.info-pop__reading {
+  margin: 0 0 10px;
+  padding: 9px 11px 10px;
+  background: var(--accent-soft);
+  border-radius: var(--r-sm);
+}
+
+.info-pop__reading[hidden] {
+  display: none;
+}
+
+.info-pop__label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  font-family: var(--f-mono);
+  font-size: 10px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--c-text-faint);
+}
+
+.info-pop__note {
+  letter-spacing: 0.03em;
+  text-transform: none;
+}
+
+.info-pop__bangla {
+  margin-top: 2px;
+  font-family: var(--f-bn);
+  font-size: 17px;
+  line-height: 1.55;
+  color: var(--c-text);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.info-pop__guesses {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.75;
+  color: var(--c-text-dim);
+}
+
+.info-pop__guesses[hidden] {
+  display: none;
+}
+
+.info-pop__chip {
+  display: inline-block;
+  margin-right: 4px;
+  padding: 0 6px;
+  font-family: var(--f-mono);
+  font-size: 11px;
+  line-height: 1.7;
+  color: var(--accent);
+  background: var(--c-surface);
+  border: 1px solid var(--c-line);
+  border-radius: 4px;
+}
+
+.info-pop__rules {
+  display: grid;
+  gap: 6px;
+  padding-left: 16px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--c-text-dim);
+}
+
+.info-pop__rules li::marker {
+  color: var(--accent);
+}
+
+.info-pop__rules code {
+  padding: 0 4px;
+  font-family: var(--f-mono);
+  font-size: 11.5px;
+  color: var(--c-text);
+  background: var(--c-surface-sunk);
+  border-radius: 3px;
+}
+
+.info-pop__rules [lang="bn"] {
+  font-family: var(--f-bn);
+  font-size: 13.5px;
+  color: var(--c-text);
 }
 
 .panel--out .script-field {
@@ -713,6 +1038,12 @@ kbd {
 
 .panel__foot .spacer {
   margin-left: auto;
+}
+
+/* Both footers share one height, whether or not they hold the i button or
+   the keyboard toggle, so the two panels line up at the bottom. */
+.panel__foot {
+  min-height: 45px;
 }
 
 /* -------------------------------------------------------------------------
@@ -1005,6 +1336,11 @@ kbd {
 
 .colophon a {
   color: inherit;
+  text-underline-offset: 3px;
+}
+
+.colophon a:hover {
+  color: var(--c-text);
 }
 
 .dot {
@@ -1117,11 +1453,451 @@ kbd {
 }
 
 /* -------------------------------------------------------------------------
+   12b. Syloti Nagri keyboard: a sheet docked to the bottom of the screen
+   ------------------------------------------------------------------------- */
+body.kb-open {
+  /* Room under the page so nothing ends up hidden behind the sheet.
+     --kb-space is the sheet's measured height, set from JS. */
+  padding-bottom: var(--kb-space, 0px);
+}
+
+.keyboard {
+  position: fixed;
+  z-index: 55;
+  right: 0;
+  bottom: 0;
+  left: 0;
+
+  display: grid;
+  gap: 0.4rem;
+
+  width: min(760px, 100%);
+  max-height: min(80vh, 560px);
+  max-height: min(80dvh, 560px);
+  margin-inline: auto;
+  padding: 0.5rem clamp(0.5rem, 2vw, 0.9rem) calc(0.7rem + env(safe-area-inset-bottom));
+
+  overflow-y: auto;
+  overscroll-behavior: contain;
+
+  /* Key size. --kb-scale is changed by dragging the grip. */
+  --kb-scale: 1;
+  --kb-key-h: 2.9rem;
+  --kb-key-font: 1.22rem;
+  --kb-key-hint: 0.6rem;
+
+  background: var(--c-surface-sunk);
+  border: 1px solid var(--c-line-strong);
+  border-bottom: 0;
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -18px 50px rgba(20, 32, 28, 0.22);
+
+  animation: kb-rise 0.22s ease;
+}
+
+.keyboard[hidden] {
+  display: none;
+}
+
+[data-theme="dark"] .keyboard {
+  background: var(--c-surface);
+  box-shadow: 0 -18px 50px rgba(0, 0, 0, 0.55);
+}
+
+@keyframes kb-rise {
+  from {
+    transform: translateY(18px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+.keyboard.is-resizing {
+  user-select: none;
+}
+
+/* Grip: a small pill with a much larger invisible touch target */
+.kb-grip {
+  position: relative;
+  justify-self: center;
+  width: 54px;
+  height: 5px;
+  background: var(--c-line-strong);
+  border-radius: 99px;
+  cursor: ns-resize;
+  touch-action: none;
+}
+
+.kb-grip::after {
+  content: "";
+  position: absolute;
+  inset: -14px -60px;
+}
+
+.kb-grip:hover,
+.keyboard.is-resizing .kb-grip {
+  background: var(--c-syloti);
+}
+
+.kb-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: var(--c-text-faint);
+}
+
+.kb-head span {
+  flex: 1;
+}
+
+.kb-close {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  font-size: 0.8rem;
+  color: var(--c-text-dim);
+  background: var(--c-surface);
+  border: 1px solid var(--c-line);
+  border-radius: 8px;
+  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+
+[data-theme="dark"] .kb-close {
+  background: var(--c-surface-sunk);
+}
+
+.kb-close:hover {
+  color: var(--c-text);
+  border-color: var(--c-line-strong);
+}
+
+/* Even, full-width rows like a real keyboard */
+.kb-group {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(2.45rem, 1fr));
+  gap: 5px;
+}
+
+/* Space and delete: always on one row, and stuck to the bottom edge if the
+   sheet ever has to scroll on a very short screen */
+.kb-group--marks {
+  position: sticky;
+  bottom: calc(-0.7rem - env(safe-area-inset-bottom));
+  grid-template-columns: 3fr 1fr;
+  padding: 2px 0 calc(0.7rem + env(safe-area-inset-bottom));
+  margin-bottom: calc(-0.7rem - env(safe-area-inset-bottom));
+  background: inherit;
+}
+
+.keyboard .kb-group--marks {
+  /* two selectors deep so the narrow-screen .kb-group rule can't override it */
+  grid-template-columns: 3fr 1fr;
+  background: var(--c-surface-sunk);
+}
+
+[data-theme="dark"] .keyboard .kb-group--marks {
+  background: var(--c-surface);
+}
+
+.key {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  min-width: 0;
+  height: calc(var(--kb-key-h) * var(--kb-scale));
+  padding: 0 2px;
+
+  color: var(--c-text);
+  background: var(--c-surface);
+  border: 1px solid var(--c-line-strong);
+  border-radius: 7px;
+  box-shadow: 0 1px 0 rgba(20, 32, 28, 0.12);
+
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.1s ease;
+}
+
+[data-theme="dark"] .key {
+  background: var(--c-surface-sunk);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
+}
+
+.key:hover {
+  border-color: var(--c-bangla);
+  background: var(--c-bangla-soft);
+}
+
+.key:active {
+  background: var(--c-syloti-soft);
+  transform: translateY(1px);
+}
+
+.key-n {
+  font-size: calc(var(--kb-key-font) * var(--kb-scale));
+  line-height: 1.1;
+}
+
+.key-n.glyph-syl {
+  font-family: var(--f-syl);
+}
+
+/* Bangla sound under each key */
+.key-r {
+  font-family: var(--f-bn);
+  font-size: calc(var(--kb-key-hint) * var(--kb-scale));
+  line-height: 1.1;
+  color: var(--c-bangla);
+}
+
+.key-wide .key-r {
+  font-family: var(--f-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-text-faint);
+}
+
+@media (max-width: 560px) {
+  .keyboard {
+    --kb-key-h: 2.7rem;
+    --kb-key-font: 1.12rem;
+    --kb-key-hint: 0.55rem;
+  }
+
+  .kb-group {
+    grid-template-columns: repeat(auto-fit, minmax(2.1rem, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .keyboard {
+    animation: none;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   12c. About
+   ------------------------------------------------------------------------- */
+.about {
+  margin-top: 30px;
+  scroll-margin-top: 20px;
+}
+
+.about__head {
+  margin-bottom: 14px;
+}
+
+.about__eyebrow {
+  font-family: var(--f-mono);
+  font-size: 11px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--c-text-faint);
+}
+
+.about__title {
+  font-family: var(--f-display);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.about__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.about__card {
+  padding: 18px 18px 20px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.about__glyph {
+  margin-bottom: 8px;
+  font-size: 26px;
+  line-height: 1.3;
+  color: var(--c-text-dim);
+}
+
+.about__glyph.glyph-syl {
+  color: var(--c-syloti);
+}
+
+.about__glyph .glyph-bn,
+.about__glyph .glyph-syl {
+  font-size: 26px;
+}
+
+.about__h {
+  margin-bottom: 8px;
+  font-family: var(--f-display);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.about__card p:not(.about__glyph) {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--c-text-dim);
+}
+
+.about__card p + p {
+  margin-top: 10px;
+}
+
+.about__sources {
+  margin-top: 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--c-text-faint);
+}
+
+.about__sources a {
+  color: var(--c-text-dim);
+  text-underline-offset: 3px;
+}
+
+.about__sources a:hover {
+  color: var(--c-text);
+}
+
+@media (max-width: 960px) {
+  .about__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* -------------------------------------------------------------------------
    13. Responsive
    ------------------------------------------------------------------------- */
 @media (max-width: 860px) {
+  body {
+    font-size: 14px;
+  }
+
   .shell {
-    padding: 14px 14px 48px;
+    padding: 12px 12px 40px;
+  }
+
+  /* Header: one line, like the desktop layout */
+  .masthead {
+    gap: 10px;
+    padding: 8px 10px 8px 8px;
+    margin-bottom: 12px;
+    border-radius: var(--r-md);
+  }
+
+  .brand {
+    gap: 8px;
+  }
+
+  .brand__mark {
+    width: 32px;
+    height: 32px;
+    font-size: 19px;
+    border-radius: 8px;
+  }
+
+  .brand__name {
+    font-size: 17px;
+  }
+
+  .brand__tagline {
+    display: none;
+  }
+
+  .masthead__tools {
+    gap: 6px;
+  }
+
+  .switch {
+    gap: 7px;
+    padding: 4px 10px 4px 6px;
+  }
+
+  .switch__track {
+    width: 30px;
+    height: 17px;
+  }
+
+  .switch__track::after {
+    width: 13px;
+    height: 13px;
+  }
+
+  .switch input:checked + .switch__track::after {
+    transform: translateX(13px);
+  }
+
+  .switch__label {
+    font-size: 12px;
+  }
+
+  .icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+  }
+
+  /* Direction switch: both choices side by side on one line */
+  .ledger {
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .ledger__pair {
+    width: 100%;
+    padding: 3px;
+  }
+
+  .dir-btn {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 34px;   /* still an easy tap target */
+    justify-content: center;
+    gap: 6px;
+    padding: 5px 6px;
+  }
+
+  .dir-btn__glyphs {
+    gap: 4px;
+    font-size: 14px;
+  }
+
+  .dir-btn__arrow {
+    font-size: 8px;
+  }
+
+  .dir-btn__caption {
+    font-size: 9.5px;
+    letter-spacing: 0.02em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .ticker {
+    font-size: 12px;
+  }
+
+  .ticker__item.glyph-bn,
+  .ticker__item.glyph-syl {
+    font-size: 13px;
   }
 
   /* Stack the panels; the swap rail becomes a horizontal divider */
@@ -1129,9 +1905,62 @@ kbd {
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .panel {
+    border-radius: var(--r-md);
+  }
+
+  .panel__head {
+    gap: 8px;
+    padding: 8px 10px;
+  }
+
+  .panel__badge {
+    width: 26px;
+    height: 26px;
+    font-size: 15px;
+  }
+
+  .panel__title {
+    font-size: 13px;
+  }
+
+  .panel__role {
+    font-size: 9.5px;
+  }
+
+  .mini-select {
+    height: 28px;
+    max-width: 124px;
+    font-size: 12px;
+  }
+
+  .mini-btn {
+    height: 28px;
+    padding: 0 9px;
+  }
+
+  /* 16px or more keeps phones from zooming in when the field is tapped */
+  .script-field {
+    height: 160px;
+    padding: 12px;
+    font-size: 17px;
+    line-height: 1.55;
+  }
+
+  .script-field::placeholder {
+    font-size: 14px;
+  }
+
+  .panel__foot {
+    gap: 10px;
+    min-height: 40px;
+    padding: 6px 10px;
+    font-size: 10.5px;
+  }
+
   .rail {
     width: auto;
-    height: 62px;
+    height: 44px;
   }
 
   .rail::before {
@@ -1143,46 +1972,19 @@ kbd {
     height: auto;
   }
 
+  .swap-btn {
+    width: 36px;
+    height: 36px;
+  }
+
   /* Panels are stacked, so the swap arrow should point up and down */
   .swap-btn i {
     transform: rotate(90deg);
   }
 
-  /* Physical shortcuts are not useful on a touch keyboard */
-  .ledger__hint {
-    display: none;
-  }
-
-  .masthead {
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-
-  .masthead__tools {
-    width: 100%;
-    margin-left: 0;
-  }
-
-  .switch {
-    flex: 1;
-    justify-content: center;
-  }
-
-  .ledger__pair {
-    flex-direction: column;
-    width: 100%;
-    border-radius: var(--r-lg);
-  }
-
-  .dir-btn {
-    width: 100%;
-    border-radius: var(--r-md);
-  }
-
-  .script-field {
-    height: 190px;
-    font-size: 19px;
-    padding: 16px 14px;
+  .commands {
+    gap: 8px;
+    margin-top: 12px;
   }
 
   .commands__status {
@@ -1193,24 +1995,96 @@ kbd {
 
   .btn {
     flex: 1;
-    min-width: 130px;
+    min-width: 120px;
+    height: 40px;
+    padding: 0 16px;
+    font-size: 14px;
+  }
+
+  /* A shortcut badge means nothing on a touch screen */
+  .btn__shortcut {
+    display: none;
+  }
+
+  .history,
+  .about {
+    margin-top: 18px;
+  }
+
+  .history {
+    border-radius: var(--r-md);
+  }
+
+  .about__title {
+    font-size: 19px;
+  }
+
+  .about__card {
+    padding: 14px 14px 16px;
+    border-radius: var(--r-md);
+  }
+
+  .about__glyph,
+  .about__glyph .glyph-bn,
+  .about__glyph .glyph-syl {
+    font-size: 21px;
+  }
+
+  .about__h {
+    font-size: 15px;
+  }
+
+  .about__card p:not(.about__glyph) {
+    font-size: 14px;
+    line-height: 1.55;
+  }
+
+  .colophon {
+    margin-top: 20px;
+    line-height: 1.8;
   }
 
   .toasts {
-    left: 14px;
-    right: 14px;
-    bottom: 14px;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
     align-items: stretch;
   }
 }
 
-@media (max-width: 420px) {
-  .brand__tagline {
+/* iPhones zoom into any form control under 16px when it is tapped */
+@supports (-webkit-touch-callout: none) {
+  @media (max-width: 860px) {
+    .mini-select {
+      font-size: 16px;
+    }
+  }
+}
+
+@media (max-width: 400px) {
+  .dir-btn__arrow {
     display: none;
   }
 
-  .panel__actions .mini-select {
+  .mini-select {
     max-width: 108px;
+  }
+}
+
+@media (max-width: 359px) {
+  /* Short switch label so the header still fits on one line */
+  .switch__label:not(.switch__label--short) {
+    display: none;
+  }
+
+  .switch__label--short {
+    display: inline;
+  }
+}
+
+@media (max-width: 340px) {
+  .dir-btn__glyphs {
+    display: none;
   }
 }
 
@@ -1235,6 +2109,10 @@ kbd {
    15. Print
    ------------------------------------------------------------------------- */
 @media print {
+  .keyboard,
+  .info-btn,
+  .info-pop,
+  .foot-btn,
   .masthead__tools,
   .rail,
   .commands,

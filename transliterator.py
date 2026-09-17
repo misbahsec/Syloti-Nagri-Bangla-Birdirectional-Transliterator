@@ -113,14 +113,16 @@ class SylhetiTransliterator:
 
         temp_text = " ".join(phonetic_results)
 
+        # ড় / ঢ় survive NFC as ড+় / ঢ+় (composition exclusions). Fold them
+        # into single code points BEFORE the cluster table: otherwise a cluster
+        # such as ণ্ড matches the ড of ণ্ড়, the nukta is dropped, and ড় comes
+        # out as ꠒ instead of ꠠ. Strict rule both ways: ড <-> ꠒ, ড় <-> ꠠ.
+        temp_text = temp_text.replace('\u09A1\u09BC', '\u09DC')
+        temp_text = temp_text.replace('\u09A2\u09BC', '\u09DD')
+
         # Apply complex cluster mapping (longest first; order in list matters)
         for bangla, syloti in self.juktoborno_map:
             temp_text = temp_text.replace(bangla, syloti)
-
-        # ড় / ঢ় survive NFC as ড+় / ঢ+় (composition exclusions), which the
-        # per-character pass would otherwise turn into ꠒ / ꠓ. Fold them first.
-        temp_text = temp_text.replace('\u09A1\u09BC', '\u09DC')
-        temp_text = temp_text.replace('\u09A2\u09BC', '\u09DD')
 
         # Apply basic character mapping
         final_output = ""
@@ -150,14 +152,16 @@ class SylhetiTransliterator:
             'ꠀ': 'আ', 'ꠁ': 'ই', 'ꠂ': 'ৈ', 'ꠃ': 'উ', 'ꠄ': 'এ',
             'ꠇ': 'ক', 'ꠈ': 'খ', 'ꠉ': 'গ', 'ꠊ': 'ঘ', 'ꠋ': 'ং',
             'ꠌ': 'চ', 'ꠍ': 'ছ', 'ꠎ': 'জ', 'ꠏ': 'ঝ',
-            'ꠐ': 'ট', 'ꠑ': 'ঠ', 'ꠓ': 'ঢ',
+            'ꠐ': 'ট', 'ꠑ': 'ঠ', 'ꠒ': 'ড', 'ꠓ': 'ঢ',
             'ꠔ': 'ত', 'ꠕ': 'থ', 'ꠖ': 'দ', 'ꠗ': 'ধ', 'ꠘ': 'ন',
             'ꠙ': 'প', 'ꠚ': 'ফ', 'ꠛ': 'ব', 'ꠜ': 'ভ', 'ꠝ': 'ম',
             'ꠞ': 'র', 'ꠟ': 'ল', 'ꠠ': 'ড়', 'ꠡ': 'স', 'ꠢ': 'হ',
             'ꠣ': 'া', 'ꠤ': 'ি', 'ꠥ': 'ু', 'ꠦ': 'ে', 'ꠧ': 'ো',
             '꠆': '্', '।': '।',
         }
-        # 'ꠅ' and 'ꠒ' are resolved by position, see _apply_contextual_rules.
+        # ꠒ is always ড and ꠠ is always ড়: each has its own Bangla letter, so
+        # neither is guessed from position. Only 'ꠅ' is positional, see
+        # _apply_contextual_rules.
 
         # 2. Conjuncts whose natural Bengali spelling is not just
         #    letter + hasant + letter. Applied longest-first, before step 1.
@@ -206,20 +210,13 @@ class SylhetiTransliterator:
         Position-sensitive glyphs, resolved before any table lookup.
 
         ꠅ  -> অ word-initially, ও elsewhere   (ꠅꠅꠀꠞ -> অওআর)
-        ꠒ  -> ড word-initially or inside a conjunct, ড় elsewhere
-              (ꠒꠣꠇꠦꠞ -> ডাকের, ꠝꠥꠒꠣꠔ -> মুড়াত, ꠑꠣꠘ꠆ꠒꠣ -> ঠান্ডা)
+
+        ꠒ and ꠠ are NOT positional: ꠒ is always ড, ꠠ is always ড়.
         """
         out = []
         for i, ch in enumerate(word):
-            prev = word[i - 1] if i else ''
-            nxt = word[i + 1] if i + 1 < len(word) else ''
             if ch == 'ꠅ':
                 out.append('অ' if i == 0 else 'ও')
-            elif ch == 'ꠒ':
-                if i == 0 or prev == '꠆' or nxt == '꠆':
-                    out.append('ড')
-                else:
-                    out.append('ড়')
             else:
                 out.append(ch)
         return ''.join(out)
